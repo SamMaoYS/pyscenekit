@@ -29,6 +29,10 @@ Absolutely! Here’s a more engaging and passionate version of your progress lis
 - [ ] 🔧 **Polishing the Gem**: Testing and optimizing for the best performance.
 - [ ] 🚀 **Launch Countdown**: Preparing for the exciting release of v1.0!
 
+## Acknowledgments
+
+PySceneKit would not be possible without the incredible work of various open-source projects and libraries that have paved the way for scene processing and visualization. For a detailed list of acknowledgments, please see the [ACKNOWLEDGMENTS.md](./ACKNOWLEDGMENTS.md) file.
+
 ## Citation
 
 If you find PySceneKit useful in your research, please consider citing the project:
