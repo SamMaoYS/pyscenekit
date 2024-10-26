@@ -1,2 +1,42 @@
-# pyscenekit
-PySceneKit is an open-source Python library designed for common 2D and 3D scene processing and visualization tasks.
+# PySceneKit
+
+PySceneKit is an open-source Python library designed for common scene processing and visualization tasks. Whether you're working with 2D or 3D scenes, PySceneKit provides a comprehensive toolkit to help you manipulate, analyze, and visualize your data with ease.
+
+## Introduction
+
+Welcome to PySceneKit! This project is fueled by my passion for scene understanding, particularly in indoor environments. Frustrated by the lack of user-friendly tools for processing images and 3D indoor scenes, I often found myself rewriting code for different datasets.
+
+PySceneKit aims to simplify scene understanding by providing an intuitive toolkit that incorporates both state-of-the-art techniques and classic methods tailored for indoor scenes. I warmly welcome contributions from fellow enthusiasts and researchers to help make this project a valuable resource for everyone!
+
+
+## Installation
+
+```bash
+conda create -n pyscenekit python=3.10 -y
+conda activate pyscenekit
+pip install -e . # will support pip install pyscenekit in the future
+```
+
+Absolutely! Here’s a more engaging and passionate version of your progress list:
+
+## Progress
+
+- [x] 🌟 **Kicking Off the Adventure**: Initial setup complete!
+- [ ] 💡 **Bringing Ideas to Life**: Core functionalities in the works.
+- [ ] 🎨 **Crafting Beautiful Scenes**: Building basic scene processing features.
+- [ ] 🔍 **Visual Wonderland**: Adding stunning visualization tools.
+- [ ] 📚 **Sharing the Love**: Writing documentation and creating examples.
+- [ ] 🔧 **Polishing the Gem**: Testing and optimizing for the best performance.
+- [ ] 🚀 **Launch Countdown**: Preparing for the exciting release of v1.0!
+
+## Citation
+
+If you find PySceneKit useful in your research, please consider citing the project:
+
+```bibtex
+@misc{mao2024pyscenekit,
+    title={PySceneKit GitHub Repository},
+    author={Mao, Yongsen},
+    year={2024}
+}
+```

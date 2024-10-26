@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyscenekit"
+version = "0.0.1"
+description = "PySceneKit is an open-source Python library designed for common 2D and 3D scene processing and visualization tasks."
+requires-python = ">=3.9.0"
+license = { file = "LICENSE" }
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python",
+]
+readme = "README.md"
+
+
+dependencies = [
+    "tqdm",
+    "trimesh",
+    "numpy",
+    "colorlog",
+    "opencv-python-headless",
+]
+
+[tool.setuptools.packages.find]
+include = ["pyscenekit*"]
