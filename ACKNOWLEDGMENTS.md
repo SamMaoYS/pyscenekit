@@ -12,6 +12,8 @@
 
 ### Depth Estimation
 
+- **MiDas**: Towards Robust Monocular Depth Estimation: Mixing Datasets for Zero-shot Cross-dataset Transfer. [link](https://github.com/isl-org/MiDaS)
+
 - **Depth Anything V2**: Robust and Accurate Depth Estimation for RGB images. [link](https://github.com/DepthAnything/Depth-Anything-V2)
 
 - **Metric3D**: Metric3D: Towards Zero-shot Metric 3D Prediction from A Single Image. [link](https://github.com/YvanYin/Metric3D)
