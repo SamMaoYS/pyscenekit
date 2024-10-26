@@ -14,6 +14,7 @@ PySceneKit aims to simplify scene understanding by providing an intuitive toolki
 ```bash
 conda create -n pyscenekit python=3.10 -y
 conda activate pyscenekit
+pip install -r requirements.txt
 pip install -e . # will support pip install pyscenekit in the future
 ```
 

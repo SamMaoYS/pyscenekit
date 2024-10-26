@@ -1,0 +1,9 @@
+defaults:
+  - models
+  - _self_
+
+verbose: false
+device: cuda # cpu, cuda
+input: examples/data/bedroom_fluxdev.jpg
+output: outputs/bedroom_fluxdev_depth.jpg
+
