@@ -1,0 +1,7 @@
+defaults:
+  - datasets
+  - _self_
+
+verbose: false
+
+output: outputs/output_image.jpg

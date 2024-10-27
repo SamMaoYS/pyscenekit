@@ -7,3 +7,4 @@ SceneKit3D is a module focusing on 3D scene processing, analysis and visualizati
 - [ ] 🏗️ 3D Reconstruction
 - [ ] 🧠 3D Scene Understanding
 - [ ] 🖼️ 3D Scene Visualization
+- [ ] 🏠 3D Scene Datasets

@@ -5,3 +5,4 @@ torchaudio==2.4.0
 transformers
 geffnet
 huggingface_hub
+natsort
