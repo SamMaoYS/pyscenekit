@@ -21,7 +21,7 @@ class MidasDepthEstimation(BaseDepthEstimation):
 
     @torch.no_grad()
     def _predict(self, image: np.ndarray) -> np.ndarray:
-        self.model.to(self.device)
+        self.to(self.device)
         inputs = self.image_processor(images=image, return_tensors="pt")
         inputs["pixel_values"] = inputs["pixel_values"].to(self.device)
         outputs = self.model(**inputs)

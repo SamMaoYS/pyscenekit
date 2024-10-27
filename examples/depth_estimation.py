@@ -4,7 +4,7 @@ from omegaconf import DictConfig
 
 from pyscenekit import attach_to_log
 from pyscenekit.utils.common import log
-from pyscenekit.scenekit2d.depth import DepthEstimationMethod, DepthEstimationModel
+from pyscenekit.scenekit2d.depth import DepthEstimationModel
 
 
 @hydra.main(config_path="../configs", config_name="scenekit2d", version_base="1.3")

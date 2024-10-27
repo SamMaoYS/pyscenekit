@@ -18,8 +18,6 @@ pip install -r requirements.txt
 pip install -e . # will support pip install pyscenekit in the future
 ```
 
-Absolutely! Here’s a more engaging and passionate version of your progress list:
-
 ## Progress
 
 - [x] 🌟 **Kicking Off the Adventure**: Initial setup complete!
