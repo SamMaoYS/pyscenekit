@@ -56,6 +56,7 @@ class DistortionParams:
         )
 
 
+# reference: https://github.com/scannetpp/scannetpp/blob/main/dslr/undistort.py
 class ScanNetPPDLSRDataset:
     def __init__(self, data_dir: str, undistort=True):
         self.data_dir = data_dir
