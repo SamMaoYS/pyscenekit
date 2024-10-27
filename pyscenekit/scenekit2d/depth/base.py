@@ -75,7 +75,7 @@ class BaseDepthEstimation(abc.ABC):
         return depth
 
     @staticmethod
-    def colormap(depth: np.ndarray, cmap: str = "jet") -> np.ndarray:
+    def colormap(depth: np.ndarray, cmap: str = "viridis") -> np.ndarray:
         if depth.dtype != np.uint8:
             depth = (depth * 255).astype(np.uint8)
 

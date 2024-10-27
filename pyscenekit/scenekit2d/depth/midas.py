@@ -12,17 +12,17 @@ class MidasDepthEstimation(BaseDepthEstimation):
         if self.model_path is None:
             self.model_path = "Intel/dpt-hybrid-midas"
 
-        self.feature_extractor = None
+        self.image_processor = None
         self.load_model()
 
     def load_model(self):
-        self.feature_extractor = DPTImageProcessor.from_pretrained(self.model_path)
+        self.image_processor = DPTImageProcessor.from_pretrained(self.model_path)
         self.model = DPTForDepthEstimation.from_pretrained(self.model_path)
 
     @torch.no_grad()
     def _predict(self, image: np.ndarray) -> np.ndarray:
         self.model.to(self.device)
-        inputs = self.feature_extractor(images=image, return_tensors="pt")
+        inputs = self.image_processor(images=image, return_tensors="pt")
         inputs["pixel_values"] = inputs["pixel_values"].to(self.device)
         outputs = self.model(**inputs)
         depth = outputs.predicted_depth

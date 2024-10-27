@@ -7,3 +7,5 @@ device: cuda # cpu, cuda
 input: examples/data/bedroom_fluxdev.jpg
 output: outputs/bedroom_fluxdev_depth.jpg
 
+depth_estimation:
+  method: midas # midas, depth_anything_v2

@@ -1,2 +1,5 @@
 midas:
     model_path: "Intel/dpt-hybrid-midas"
+
+depth_anything_v2:
+    model_path: "depth-anything/Depth-Anything-V2-Large-hf"

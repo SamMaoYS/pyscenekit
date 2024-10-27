@@ -1,1 +1,1 @@
-from .midas import MidasDepthEstimation
+from .core import DepthEstimationMethod, DepthEstimationModel
