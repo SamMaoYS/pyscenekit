@@ -18,6 +18,13 @@ pip install -r requirements.txt
 pip install -e . # will support pip install pyscenekit in the future
 ```
 
+## Usage
+
+SceneKit2D is a module within PySceneKit that focuses on 2D scene processing and analysis. It provides a set of tools and algorithms for working with 2D images, particularly in the context of indoor scenes. Checkout the key features in [SceneKit2D](./SCENEKIT2D.md).
+
+SceneKit3D is a module focusing on 3D scene processing and analysis. Checkout the key features in [SceneKit3D](./SCENEKIT3D.md).
+
+
 ## Progress
 
 - [x] 🌟 **Kicking Off the Adventure**: Initial setup complete!
