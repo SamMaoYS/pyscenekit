@@ -25,6 +25,8 @@ class BaseImageModel(abc.ABC):
         self.resolution_pred = None
         self.resolution_output = None
 
+        self.resize_mode = cv2.INTER_LINEAR
+
     @abc.abstractmethod
     def load_model(self):
         raise NotImplementedError
@@ -48,7 +50,9 @@ class BaseImageModel(abc.ABC):
             self.resolution_pred = resolution
 
         if self.resolution_pred is not None:
-            input_image = self.resize(input_image, self.resolution_pred)
+            input_image = self.resize(
+                input_image, self.resolution_pred, cv2.INTER_LANCZOS4
+            )
             self.resolution_output = self.resolution_pred
 
         output_image = self._predict(input_image)
@@ -56,14 +60,21 @@ class BaseImageModel(abc.ABC):
             self.resolution_output = self.resolution_input
 
         if self.resolution_output is not None:
-            output_image = self.resize(output_image, self.resolution_output)
+            output_image = self.resize(
+                output_image, self.resolution_output, self.resize_mode
+            )
 
         return output_image
 
     # resize image to the given resolution
-    def resize(self, image: np.ndarray, resolution: Tuple[int, int]) -> np.ndarray:
+    def resize(
+        self,
+        image: np.ndarray,
+        resolution: Tuple[int, int],
+        resize_mode: int = cv2.INTER_LANCZOS4,
+    ) -> np.ndarray:
         h, w = resolution
-        image = cv2.resize(image, (w, h))
+        image = cv2.resize(image, (w, h), interpolation=resize_mode)
         return image
 
     @abc.abstractmethod

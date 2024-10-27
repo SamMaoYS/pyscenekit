@@ -8,3 +8,6 @@ dsine:
     # set to None to download from default url
     model_path:
     efficientnet_path:
+
+upernet:
+    model_path: openmmlab/upernet-convnext-large

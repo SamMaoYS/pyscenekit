@@ -12,3 +12,6 @@ depth_estimation:
 
 normal_estimation:
   method: dsine # dsine
+
+image_segmentation:
+  method: upernet # upernet
