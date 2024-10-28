@@ -1,3 +1,4 @@
+# Depth Estimation
 midas:
     model_path: "Intel/dpt-hybrid-midas"
 
@@ -11,6 +12,7 @@ depth_pro:
 lotus_depth:
     model_path: "jingheya/lotus-depth-g-v1-0"
 
+# Normal Estimation
 lotus_normal:
     model_path: "jingheya/lotus-normal-g-v1-0"
 
@@ -19,5 +21,10 @@ dsine:
     model_path:
     efficientnet_path:
 
+# Segmentation
 upernet:
     model_path: openmmlab/upernet-convnext-large
+
+# Reconstruction
+dust3r:
+    model_path: "nielsr/DUSt3R_ViTLarge_BaseDecoder_512_dpt"

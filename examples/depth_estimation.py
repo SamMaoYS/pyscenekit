@@ -17,9 +17,7 @@ def main(cfg: DictConfig):
     depth_estimator = DepthEstimationModel(cfg.depth_estimation.method, model_path)
     depth_estimator.to(cfg.device)
 
-    image = cv2.imread(cfg.input)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    depth = depth_estimator(image)
+    depth = depth_estimator(cfg.input)
     depth = depth_estimator.normalize(depth)
     depth = depth_estimator.colormap(depth, cmap="viridis")
 

@@ -1,5 +1,5 @@
 import abc
-from typing import Union
+from typing import Union, Literal
 
 import cv2
 import trimesh
@@ -89,21 +89,27 @@ class SceneKitGeometry(abc.ABC):
     def centroid(self):
         return np.mean(self.get_vertices(), axis=0)
 
-    @abc.abstractmethod
     @property
     def min_bound(self):
         return np.min(self.get_vertices(), axis=0)
 
-    @abc.abstractmethod
     @property
     def max_bound(self):
         return np.max(self.get_vertices(), axis=0)
 
 
 class SceneKitMesh(SceneKitGeometry):
-    def __init__(self, mesh_path: str):
-        self.mesh_path = mesh_path
-        self.mesh = None
+    def __init__(
+        self, mesh: Union[str, o3d.geometry.TriangleMesh, trimesh.Trimesh] = None
+    ):
+        if isinstance(mesh, str):
+            self.mesh = self.load_o3d_mesh(mesh)
+        elif isinstance(mesh, o3d.geometry.TriangleMesh):
+            self.mesh = mesh
+        elif isinstance(mesh, trimesh.Trimesh):
+            self.mesh = mesh
+        elif mesh is not None:
+            raise ValueError(f"Unsupported mesh type: {type(mesh)}")
 
     def load_o3d_mesh(self):
         self.mesh = o3d.io.read_triangle_mesh(self.mesh_path)
@@ -127,11 +133,27 @@ class SceneKitMesh(SceneKitGeometry):
         else:
             raise ValueError("Unsupported mesh type")
 
+    def get_colors(self, color_type: Literal["vertex", "face"] = "vertex"):
+        if color_type == "vertex":
+            return self.get_vertex_colors()
+        elif color_type == "face":
+            return self.get_face_colors()
+        else:
+            raise ValueError(f"Unsupported color type: {color_type}")
+
     def get_vertex_colors(self):
         if isinstance(self.mesh, o3d.geometry.TriangleMesh):
             return np.asarray(self.mesh.vertex_colors)
         elif isinstance(self.mesh, trimesh.Trimesh):
             return self.mesh.visual.vertex_colors
+        else:
+            raise ValueError("Unsupported mesh type")
+
+    def get_face_colors(self):
+        if isinstance(self.mesh, o3d.geometry.TriangleMesh):
+            raise ValueError("o3d.geometry.TriangleMesh does not support face colors")
+        elif isinstance(self.mesh, trimesh.Trimesh):
+            return self.mesh.visual.face_colors
         else:
             raise ValueError("Unsupported mesh type")
 
@@ -143,35 +165,67 @@ class SceneKitMesh(SceneKitGeometry):
 
 
 class SceneKitPointCloud(SceneKitGeometry):
-    def __init__(self, pointcloud_path: str):
-        self.pointcloud_path = pointcloud_path
-        self.pointcloud = None
+    def __init__(
+        self,
+        point_cloud: Union[str, o3d.geometry.PointCloud, trimesh.PointCloud] = None,
+    ):
+        self.point_cloud = None
+        if isinstance(point_cloud, str):
+            self.point_cloud = self.load_point_cloud(point_cloud)
+        elif isinstance(point_cloud, o3d.geometry.PointCloud):
+            self.set_point_cloud(point_cloud)
+        elif isinstance(point_cloud, trimesh.PointCloud):
+            self.from_trimesh_point_cloud(point_cloud)
+        elif point_cloud is not None:
+            raise ValueError(f"Unsupported point_cloud type: {type(point_cloud)}")
 
-    def load_pointcloud(self):
-        self.pointcloud = o3d.io.read_point_cloud(self.pointcloud_path)
+    def set_point_cloud(self, point_cloud: o3d.geometry.PointCloud):
+        self.point_cloud = point_cloud
+
+    def load_point_cloud(self, point_cloud_path: str):
+        self.point_cloud = o3d.io.read_point_cloud(point_cloud_path)
 
     def get_vertices(self):
-        return np.asarray(self.pointcloud.points)
+        return np.asarray(self.point_cloud.points)
 
     def get_colors(self):
-        return np.asarray(self.pointcloud.colors)
+        return np.asarray(self.point_cloud.colors)
 
     def get_normals(self):
-        # if pointcloud has normals
-        if not self.pointcloud.has_normals():
+        # if point_cloud has normals
+        if not self.point_cloud.has_normals():
             self.estimate_normals()
-        return np.asarray(self.pointcloud.normals)
+        return np.asarray(self.point_cloud.normals)
 
     def estimate_normals(self, knn: int = 30):
-        self.pointcloud.estimate_normals(
+        self.point_cloud.estimate_normals(
             search_param=o3d.geometry.KDTreeSearchParamKNN(knn=knn)
         )
 
-    def to_trimesh_pointcloud(self):
+    def to_trimesh_point_cloud(self):
         return trimesh.PointCloud(self.get_vertices(), self.get_colors())
 
+    def from_trimesh_point_cloud(self, point_cloud: trimesh.PointCloud):
+        self.point_cloud = o3d.geometry.PointCloud(
+            o3d.utility.Vector3dVector(point_cloud.vertices),
+            o3d.utility.Vector3dVector(point_cloud.colors),
+        )
+
+    from diffusers import ControlNetModel
+
+    @classmethod
+    def from_vertices(cls, vertices: np.ndarray, colors: np.ndarray = None):
+        point_cloud = o3d.geometry.PointCloud(
+            o3d.utility.Vector3dVector(vertices),
+        )
+        if colors is not None:
+            if colors.dtype == np.uint8:
+                colors = colors.astype(np.float32) / 255.0
+            point_cloud.colors = o3d.utility.Vector3dVector(colors)
+        return cls(point_cloud)
+
     def transform(self, transform: np.ndarray):
-        self.pointcloud.transform(transform)
+        self.point_cloud.transform(transform)
 
 
 class SceneKitStructuredPointCloud:
@@ -212,7 +266,7 @@ class SceneKitStructuredPointCloud:
 
         self.camera = camera
 
-        self.pointcloud = self.unproject_point_cloud()
+        self.point_cloud = self.unproject_point_cloud()
 
     def unproject_point_cloud(self, colormap_depth: bool = False):
         image_width, image_height = self.rgb_image.width, self.rgb_image.height
@@ -253,10 +307,10 @@ class SceneKitStructuredPointCloud:
         return o3d.geometry.Image(rgb_image)
 
     def transform(self, transform: np.ndarray):
-        self.pointcloud.transform(transform)
+        self.point_cloud.transform(transform)
 
     def get_vertices(self):
-        return np.asarray(self.pointcloud.points)
+        return np.asarray(self.point_cloud.points)
 
     def get_colors(self):
-        return np.asarray(self.pointcloud.colors)
+        return np.asarray(self.point_cloud.colors)

@@ -1,5 +1,6 @@
-import PIL.Image
+import cv2
 import torch
+import PIL.Image
 import numpy as np
 
 from pyscenekit.scenekit2d.utils import ImageInput
@@ -15,7 +16,10 @@ class SceneKitImage:
             self._input_image = None
 
     def to_numpy(self, mean_shift=None):
-        if isinstance(self._input_image, PIL.Image.Image):
+        if isinstance(self._input_image, str):
+            self.image = cv2.imread(self._input_image)
+            self.image = cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
+        elif isinstance(self._input_image, PIL.Image.Image):
             self.image = np.array(self._input_image)
         elif isinstance(self._input_image, np.ndarray):
             self.image = self._input_image

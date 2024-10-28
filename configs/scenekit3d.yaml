@@ -1,7 +1,19 @@
 defaults:
   - datasets
+  - models
   - _self_
 
 verbose: false
+device: cuda # cpu, cuda
 
-output: outputs/output_image.jpg
+input:
+output: outputs/reconstruction.pth
+
+multiview_reconstruction:
+  method: dust3r
+  image_list: examples/data/scannetpp_6b40d1a939_*.JPG
+  export_point_cloud: true
+
+visualization:
+  interactive: false
+  method: pyrender

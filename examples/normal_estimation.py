@@ -25,9 +25,8 @@ def main(cfg: DictConfig):
         **additional_kwargs,
     )
     normal_estimator.to(cfg.device)
-    image = cv2.imread(cfg.input)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    normal = normal_estimator(image)
+
+    normal = normal_estimator(cfg.input)
     normal = normal_estimator.to_rgb(normal)
     cv2.imwrite(cfg.output, cv2.cvtColor(normal, cv2.COLOR_RGB2BGR))
     log.info(f"Normal map saved to {cfg.output}")

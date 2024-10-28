@@ -11,7 +11,7 @@ from pyscenekit.scenekit3d.common import SceneKitCamera, SceneKitGeometry
 
 class SceneKitRender(abc.ABC):
     def __init__(
-        self, resolution=np.array([1024, 1024]), background_color=np.array([0, 0, 0, 0])
+        self, resolution=np.array([1024, 1024]), background_color=np.array([1, 1, 1, 0])
     ):
         self.background_color = background_color
         self.ambient_color = np.array([1, 1, 1])

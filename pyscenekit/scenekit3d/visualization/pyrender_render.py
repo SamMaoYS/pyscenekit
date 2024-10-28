@@ -1,11 +1,6 @@
-import os
 import numpy as np
-import trimesh
 import pyrender
-
 from pyrender.constants import RenderFlags
-
-os.environ["PYOPENGL_PLATFORM"] = "egl"
 
 from pyscenekit.scenekit3d.common import (
     SceneKitMesh,
@@ -17,7 +12,7 @@ from pyscenekit.scenekit3d.visualization.base import SceneKitRender
 
 class PyRenderRender(SceneKitRender):
     def __init__(
-        self, resolution=np.array([1024, 1024]), background_color=np.array([0, 0, 0, 0])
+        self, resolution=np.array([1024, 1024]), background_color=np.array([1, 1, 1, 0])
     ):
         super().__init__(resolution, background_color)
 

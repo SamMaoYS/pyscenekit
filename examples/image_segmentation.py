@@ -19,9 +19,7 @@ def main(cfg: DictConfig):
     )
     semantic_model.to(cfg.device)
 
-    image = cv2.imread(cfg.input)
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    semantic_image = semantic_model(image)
+    semantic_image = semantic_model(cfg.input)
     semantic_image = semantic_model.semantic_colorize(semantic_image)
 
     cv2.imwrite(cfg.output, cv2.cvtColor(semantic_image, cv2.COLOR_RGB2BGR))
