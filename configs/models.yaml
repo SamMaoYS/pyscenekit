@@ -8,6 +8,12 @@ depth_pro:
     # set to None to download from default url
     model_path:
 
+lotus_depth:
+    model_path: "jingheya/lotus-depth-g-v1-0"
+
+lotus_normal:
+    model_path: "jingheya/lotus-normal-g-v1-0"
+
 dsine:
     # set to None to download from default url
     model_path:

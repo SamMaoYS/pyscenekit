@@ -12,7 +12,7 @@ Example usage:
 python examples/depth_estimation.py depth_estimation.method=depth_anything_v2 input=examples/data/bedroom_fluxdev.jpg
 output=outputs/bedroom_fluxdev_depth.jpg
 ```
-Currently, we support the following methods, change the `depth_estimation.method` to try different methods: `midas`, `depth_anything_v2`.
+Currently, we support the following methods, change the `depth_estimation.method` to try different methods: `midas`, `depth_anything_v2`, `depth_pro`, `lotus_depth`.
 
 ## Normal Estimation
 
