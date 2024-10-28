@@ -4,6 +4,19 @@ from pyscenekit.scenekit3d.datasets.scannetpp.dlsr import ScanNetPPDLSRDataset
 
 class ScanNetPPDataset:
     """
+    ScanNet++: A High-Fidelity Dataset of 3D Indoor Scenes
+
+    Authors: Chandan Yeshwanth, Yueh-Cheng Liu, Matthias Nießner, Angela Dai
+
+    https://github.com/scannetpp/scannetpp
+
+    @inproceedings{yeshwanthliu2023scannetpp,
+        title={ScanNet++: A High-Fidelity Dataset of 3D Indoor Scenes},
+        author={Yeshwanth, Chandan and Liu, Yueh-Cheng and Nie{\ss}ner, Matthias and Dai, Angela},
+        booktitle = {Proceedings of the International Conference on Computer Vision ({ICCV})},
+        year={2023}
+    }
+
     ScanNetPP Dataset Folder structure:
     data_dir
     ├── scene_id

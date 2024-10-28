@@ -9,6 +9,21 @@ from pyscenekit.scenekit2d.normal.modules.dsine import DSINE, dsine_utils
 
 
 class DsineNormalEstimation(BaseNormalEstimation):
+    """
+    Rethinking Inductive Biases for Surface Normal Estimation
+
+    Authors: Gwangbin Bae, Andrew J. Davison
+
+    https://github.com/baegwangbin/DSINE
+
+    @inproceedings{bae2024dsine,
+        title     = {Rethinking Inductive Biases for Surface Normal Estimation},
+        author    = {Gwangbin Bae and Andrew J. Davison},
+        booktitle = {IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+        year      = {2024}
+    }
+    """
+
     def __init__(self, model_path: str = None, efficientnet_path: str = None):
         super().__init__(model_path)
         if self.model_path is None:

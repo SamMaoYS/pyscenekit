@@ -29,6 +29,22 @@ from pyscenekit.scenekit3d.reconstruction.base import (
 
 
 class Dust3rReconstruction(MultiViewReconstructionModel):
+    """
+    DUSt3R: Geometric 3D Vision Made Easy
+
+    Authors: Shuzhe Wang, Vincent Leroy, Yohann Cabon, Boris Chidlovskii, Jerome Revaud.
+
+    https://github.com/naver/dust3r
+    A miniature version: https://github.com/pablovela5620/mini-dust3r
+
+    @inproceedings{dust3r_cvpr24,
+        title={DUSt3R: Geometric 3D Vision Made Easy},
+        author={Shuzhe Wang and Vincent Leroy and Yohann Cabon and Boris Chidlovskii and Jerome Revaud},
+        booktitle = {CVPR},
+        year = {2024}
+    }
+    """
+
     def __init__(self, model_path: str = None):
         super().__init__(model_path)
         if self.model_path is None:

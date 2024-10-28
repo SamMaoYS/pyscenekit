@@ -6,6 +6,21 @@ from pyscenekit.scenekit2d.depth.base import BaseDepthEstimation
 
 
 class DepthAnythingV2DepthEstimation(BaseDepthEstimation):
+    """
+    Depth Anything V2
+
+    Authors: Lihe Yang, Bingyi Kang, Zilong Huang, Zhen Zhao, Xiaogang Xu, Jiashi Feng, Hengshuang Zhao.
+
+    https://github.com/DepthAnything/Depth-Anything-V2
+
+    @article{depth_anything_v2,
+        title={Depth Anything V2},
+        author={Yang, Lihe and Kang, Bingyi and Huang, Zilong and Zhao, Zhen and Xu, Xiaogang and Feng, Jiashi and Zhao, Hengshuang},
+        journal={arXiv:2406.09414},
+        year={2024}
+    }
+    """
+
     def __init__(self, model_path: str = None):
         super().__init__(model_path)
         if self.model_path is None:

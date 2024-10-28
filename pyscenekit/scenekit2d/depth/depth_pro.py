@@ -10,6 +10,25 @@ from pyscenekit.scenekit2d.depth.modules.depth_pro.depth_pro import (
 
 
 class DepthProDepthEstimation(BaseDepthEstimation):
+    """
+    Depth Pro: Sharp Monocular Metric Depth in Less Than a Second
+
+    Authors: Aleksei Bochkovskii, Amaël Delaunoy, Hugo Germain, Marcel Santos, Yichao Zhou, Stephan R. Richter, and Vladlen Koltun.
+
+    https://github.com/apple/ml-depth-pro
+
+
+
+    @article{Bochkovskii2024:arxiv,
+        author     = {Aleksei Bochkovskii and Ama\"{e}l Delaunoy and Hugo Germain and Marcel Santos and
+                    Yichao Zhou and Stephan R. Richter and Vladlen Koltun}
+        title      = {Depth Pro: Sharp Monocular Metric Depth in Less Than a Second},
+        journal    = {arXiv},
+        year       = {2024},
+        url        = {https://arxiv.org/abs/2410.02073},
+    }
+    """
+
     def __init__(self, model_path: str = None):
         super().__init__(model_path)
         if self.model_path is None:

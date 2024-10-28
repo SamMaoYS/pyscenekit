@@ -9,6 +9,21 @@ from pyscenekit.scenekit2d.depth.modules.lotus.pipeline import LotusGPipeline
 
 
 class LotusDepthEstimation(BaseDepthEstimation):
+    """
+    Lotus: Diffusion-based Visual Foundation Model for High-quality Dense Prediction
+
+    Authors: Jing He, Haodong Li, Wei Yin, Yixun Liang, Leheng Li, Kaiqiang Zhou, Hongbo Zhang, Bingbing Liu, Ying-Cong Chen.
+
+    https://github.com/EnVision-Research/Lotus
+
+    @article{he2024lotus,
+        title={Lotus: Diffusion-based Visual Foundation Model for High-quality Dense Prediction},
+        author={He, Jing and Li, Haodong and Yin, Wei and Liang, Yixun and Li, Leheng and Zhou, Kaiqiang and Liu, Hongbo and Liu, Bingbing and Chen, Ying-Cong},
+        journal={arXiv preprint arXiv:2409.18124},
+        year={2024}
+    }
+    """
+
     def __init__(self, model_path: str = None):
         super().__init__(model_path)
         if self.model_path is None:
