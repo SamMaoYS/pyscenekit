@@ -8,7 +8,7 @@ input: examples/data/bedroom_fluxdev.jpg
 output: outputs/bedroom_fluxdev_pred.jpg
 
 depth_estimation:
-  method: midas # midas, depth_anything_v2
+  method: midas # midas, depth_anything_v2, depth_pro
 
 normal_estimation:
   method: dsine # dsine

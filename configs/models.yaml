@@ -4,6 +4,10 @@ midas:
 depth_anything_v2:
     model_path: "depth-anything/Depth-Anything-V2-Large-hf"
 
+depth_pro:
+    # set to None to download from default url
+    model_path:
+
 dsine:
     # set to None to download from default url
     model_path:

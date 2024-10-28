@@ -1,7 +1,8 @@
 from enum import Enum
 
-from pyscenekit.scenekit2d.depth.depth_anything_v2 import DepthAnythingV2DepthEstimation
 from pyscenekit.scenekit2d.depth.midas import MidasDepthEstimation
+from pyscenekit.scenekit2d.depth.depth_pro import DepthProDepthEstimation
+from pyscenekit.scenekit2d.depth.depth_anything_v2 import DepthAnythingV2DepthEstimation
 
 
 class DepthEstimationMethod(Enum):
@@ -20,6 +21,8 @@ class DepthEstimationModel:
             return MidasDepthEstimation(model_path)
         elif method == DepthEstimationMethod.DEPTH_ANYTHING_V2:
             return DepthAnythingV2DepthEstimation(model_path)
+        elif method == DepthEstimationMethod.DEPTH_PRO:
+            return DepthProDepthEstimation(model_path)
         else:
             raise NotImplementedError(
                 f"Depth estimation method {method} not implemented"
