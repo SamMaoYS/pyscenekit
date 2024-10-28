@@ -6,12 +6,12 @@ defaults:
 verbose: false
 device: cuda # cpu, cuda
 
-input:
+input: examples/data/scannetpp_6b40d1a939_*.JPG
 output: outputs/reconstruction.pth
 
 multiview_reconstruction:
   method: dust3r
-  image_list: examples/data/scannetpp_6b40d1a939_*.JPG
+  image_list: ${input}
   export_point_cloud: true
 
 visualization:
