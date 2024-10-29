@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import cv2
 import torch
+import trimesh
 import numpy as np
 import open3d as o3d
 from pyscenekit.scenekit2d.utils import ImageInput
@@ -33,15 +34,49 @@ class MultiViewReconstructionOutput:
 
     def export_pcd(self, output_path: str):
         # merge point clouds
-        vertices = np.concatenate([pc.get_vertices() for pc in self.point_cloud_list])
-        colors = np.concatenate([pc.get_colors() for pc in self.point_cloud_list])
-        normals = np.concatenate([pc.get_normals() for pc in self.point_cloud_list])
+        vertices = np.concatenate(
+            [pc.get_vertices() for pc in self.point_cloud_list], axis=0
+        )
+        colors = np.concatenate(
+            [pc.get_colors() for pc in self.point_cloud_list], axis=0
+        )
+        normals = np.concatenate(
+            [pc.get_normals() for pc in self.point_cloud_list], axis=0
+        )
 
         pcd = o3d.geometry.PointCloud()
         pcd.points = o3d.utility.Vector3dVector(vertices)
         pcd.colors = o3d.utility.Vector3dVector(colors)
         pcd.normals = o3d.utility.Vector3dVector(normals)
         o3d.io.write_point_cloud(output_path, pcd)
+
+        return SceneKitPointCloud(pcd)
+
+    def export_mesh(self, output_path: str):
+        vertices = np.concatenate(
+            [mesh.get_vertices() for mesh in self.mesh_list], axis=0
+        )
+        faces = np.concatenate([mesh.get_faces() for mesh in self.mesh_list], axis=0)
+        colors = np.concatenate(
+            [mesh.get_face_colors() for mesh in self.mesh_list], axis=0
+        )
+
+        vertices, faces, colors = zip(
+            *[
+                (m.get_vertices(), m.get_faces(), m.get_face_colors())
+                for m in self.mesh_list
+            ]
+        )
+        n_vertices = np.cumsum([0] + [len(v) for v in vertices])
+        for i in range(len(faces)):
+            faces[i][:] += n_vertices[i]
+
+        vertices = np.concatenate(vertices)
+        colors = np.concatenate(colors)
+        faces = np.concatenate(faces)
+        mesh = trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=colors)
+        mesh.export(output_path)
+        return SceneKitMesh(mesh)
 
     def to_dict(self):
         point_cloud_vertices_list = [
@@ -66,6 +101,46 @@ class MultiViewReconstructionOutput:
             "mesh_face_colors_list": mesh_face_colors_list,
             "mesh_faces_list": mesh_faces_list,
         }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        color_list = data["color_list"]
+        depth_list = data["depth_list"]
+        confidence_list = data["confidence_list"]
+        mask_list = data["mask_list"]
+        cameras = data["cameras"]
+
+        point_cloud_vertices_list = data["point_cloud_vertices_list"]
+        point_cloud_colors_list = data["point_cloud_colors_list"]
+        mesh_vertices_list = data["mesh_vertices_list"]
+        mesh_face_colors_list = data["mesh_face_colors_list"]
+        mesh_faces_list = data["mesh_faces_list"]
+
+        point_cloud_list = [
+            SceneKitPointCloud(trimesh.PointCloud(vertices=vertices, colors=colors))
+            for vertices, colors in zip(
+                point_cloud_vertices_list, point_cloud_colors_list
+            )
+        ]
+
+        mesh_list = [
+            SceneKitMesh(
+                trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=colors)
+            )
+            for vertices, faces, colors in zip(
+                mesh_vertices_list, mesh_faces_list, mesh_face_colors_list
+            )
+        ]
+
+        return cls(
+            color_list,
+            depth_list,
+            confidence_list,
+            mask_list,
+            cameras,
+            point_cloud_list,
+            mesh_list,
+        )
 
 
 class MultiViewReconstructionModel(abc.ABC):

@@ -19,7 +19,6 @@ class SceneKitCamera:
         self.name = name
         self.camera_pose = np.linalg.inv(extrinsics)
 
-    def __post_init__(self):
         if self.intrinsics is None:
             self.intrinsics = o3d.camera.PinholeCameraIntrinsic(
                 o3d.camera.PinholeCameraIntrinsicParameters.PrimeSenseDefault
@@ -56,24 +55,23 @@ class SceneKitCamera:
         return self.intrinsics[1, 2]
 
     # convert to perspective camera with fov convention
-    @property
-    def fovh(self, width: int):
+    def hfov(self, width: int):
         return 2 * np.arctan2(float(width), 2 * self.fx)
 
-    @property
-    def fovv(self, height: int):
+    def vfov(self, height: int):
         return 2 * np.arctan2(float(height), 2 * self.fy)
 
     # convert from perspective camera with fov convention to camera intrinsics
-    def from_fov(self, fovh: float, fovv: float, width: int, height: int):
+    @classmethod
+    def from_fov(cls, hfov: float, vfov: float, width: int, height: int):
         width = float(width)
         height = float(height)
-        fx = width / (2 * np.tan(fovh / 2))
-        fy = height / (2 * np.tan(fovv / 2))
+        fx = width / (2 * np.tan(hfov / 2))
+        fy = height / (2 * np.tan(vfov / 2))
         cx = width / 2
         cy = height / 2
-        self.intrinsics = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
-        return self.intrinsics
+        intrinsics = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
+        return cls(intrinsics)
 
 
 class SceneKitGeometry(abc.ABC):
@@ -207,8 +205,10 @@ class SceneKitPointCloud(SceneKitGeometry):
 
     def from_trimesh_point_cloud(self, point_cloud: trimesh.PointCloud):
         self.point_cloud = o3d.geometry.PointCloud(
-            o3d.utility.Vector3dVector(point_cloud.vertices),
-            o3d.utility.Vector3dVector(point_cloud.colors),
+            o3d.utility.Vector3dVector(point_cloud.vertices)
+        )
+        self.point_cloud.colors = o3d.utility.Vector3dVector(
+            point_cloud.colors.astype(np.float32)[:, :3] / 255.0
         )
 
     from diffusers import ControlNetModel

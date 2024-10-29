@@ -13,6 +13,7 @@ multiview_reconstruction:
   method: dust3r
   image_list: ${input}
   export_point_cloud: true
+  export_mesh: false
 
 visualization:
   interactive: false

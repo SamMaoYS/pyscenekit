@@ -12,7 +12,9 @@ from pyscenekit.scenekit3d.visualization.base import SceneKitRender
 
 class PyRenderRender(SceneKitRender):
     def __init__(
-        self, resolution=np.array([1024, 1024]), background_color=np.array([1, 1, 1, 0])
+        self,
+        resolution=np.array([1024, 1024]),
+        background_color=np.array([1.0, 1.0, 1.0, 0.0]),
     ):
         super().__init__(resolution, background_color)
 
@@ -81,6 +83,7 @@ class PyRenderRender(SceneKitRender):
         )
 
     def render(self, window_title: str = "PyRenderWindow", interactive: bool = False):
+        self.update_scene()
         self.scene.ambient_light = self.ambient_color
 
         for geometry in self.geometries:
@@ -92,7 +95,9 @@ class PyRenderRender(SceneKitRender):
             ):
                 vertices = geometry.get_vertices()
                 colors = geometry.get_colors()
-                self.scene.add(pyrender.Mesh.from_points(vertices, colors))
+                self.scene.add(
+                    pyrender.Mesh.from_points(vertices, colors.astype(float))
+                )
             else:
                 raise ValueError(f"Unsupported geometry type: {type(geometry)}")
 

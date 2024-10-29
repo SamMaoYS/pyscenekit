@@ -11,14 +11,18 @@ from pyscenekit.scenekit3d.common import SceneKitCamera, SceneKitGeometry
 
 class SceneKitRender(abc.ABC):
     def __init__(
-        self, resolution=np.array([1024, 1024]), background_color=np.array([1, 1, 1, 0])
+        self,
+        resolution=np.array([1024, 1024]),
+        background_color=np.array([1.0, 1.0, 1.0, 0.0]),
     ):
         self.background_color = background_color
-        self.ambient_color = np.array([1, 1, 1])
+        self.ambient_color = np.array([1.0, 1.0, 1.0])
         self.resolution = resolution
         self.scene_centroid = np.array([0, 0, 0])
         self.scene_diameter = 1.0
-        self.camera = SceneKitCamera()
+        self.camera = SceneKitCamera.from_fov(
+            hfov=np.pi / 3, vfov=np.pi / 3, width=resolution[0], height=resolution[1]
+        )
         self.geometries = []
 
         self.point_size = 1.0
@@ -44,11 +48,10 @@ class SceneKitRender(abc.ABC):
         vertices = np.concatenate(
             [geometry.get_vertices() for geometry in self.geometries]
         )
-        self.scene_centroid = np.mean(vertices, axis=0)
-        # max bound - min bound
-        self.scene_diameter = np.linalg.norm(
-            np.max(vertices, axis=0) - np.min(vertices, axis=0)
-        )
+        min_bound = np.min(vertices, axis=0)
+        max_bound = np.max(vertices, axis=0)
+        self.scene_centroid = (min_bound + max_bound) / 2.0
+        self.scene_diameter = np.linalg.norm(max_bound - min_bound)
 
     def update_camera(self, camera: SceneKitCamera):
         self.camera = camera
@@ -61,13 +64,14 @@ class SceneKitRender(abc.ABC):
         self.set_camera_pose_by_angle()
 
     def set_camera_pose_by_angle(self, angle: float = np.pi * 0.75):
+        self.update_scene()
         look_at_pos = self.scene_centroid
-        distance = self.scene_diameter * 2.0
+        distance = self.scene_diameter
 
         offset_tmp = distance * np.array([-np.cos(angle), -np.sin(angle), 1.0])
         offset_tmp = np.append(offset_tmp, [1.0])
-        tmp_world_up = np.array[0, 0, 1]
-        if tmp_world_up != self._world_up:
+        tmp_world_up = np.array([0, 0, 1])
+        if not np.all(tmp_world_up == self._world_up):
             transform_tmp = trimesh.geometry.align_vectors(tmp_world_up, self._world_up)
             offset_tmp = transform_tmp.dot(offset_tmp)
         camera_pos = look_at_pos + offset_tmp[:3]
