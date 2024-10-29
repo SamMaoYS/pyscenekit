@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import cv2
 import torch
 import PIL.Image
@@ -57,3 +59,6 @@ class SceneKitImage:
 
     def to_pil(self):
         return PIL.Image.fromarray(self.image)
+
+    def resize(self, resolution: Tuple[int, int], mode: int):
+        return cv2.resize(self.image, resolution, interpolation=mode)

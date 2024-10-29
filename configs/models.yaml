@@ -1,3 +1,8 @@
+# Camera Estimation
+geo_calib:
+    # set to None to download from default url
+    model_path:
+
 # Depth Estimation
 midas:
     model_path: "Intel/dpt-hybrid-midas"

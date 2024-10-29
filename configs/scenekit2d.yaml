@@ -7,6 +7,10 @@ device: cuda # cpu, cuda
 input: examples/data/bedroom_fluxdev.jpg
 output: outputs/bedroom_fluxdev_pred.jpg
 
+
+camera_estimation:
+  method: geo_calib # geo_calib
+
 depth_estimation:
   method: midas # midas, depth_anything_v2, depth_pro
 
