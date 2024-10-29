@@ -574,8 +574,6 @@ class SceneKitPointCloud(SceneKitGeometry):
             point_cloud.colors.astype(np.float32)[:, :3] / 255.0
         )
 
-    from diffusers import ControlNetModel
-
     @classmethod
     def from_vertices(cls, vertices: np.ndarray, colors: np.ndarray = None):
         point_cloud = o3d.geometry.PointCloud(
@@ -589,6 +587,9 @@ class SceneKitPointCloud(SceneKitGeometry):
 
     def transform(self, transform: np.ndarray):
         self.point_cloud.transform(transform)
+
+    def export(self, output_path: str):
+        o3d.io.write_point_cloud(output_path, self.point_cloud)
 
 
 class SceneKitStructuredPointCloud:

@@ -9,11 +9,16 @@ device: cuda # cpu, cuda
 input: examples/data/scannetpp_6b40d1a939_*.JPG
 output: outputs/reconstruction.pth
 
+singleview_reconstruction:
+  method: moge
+  export_point_cloud: true
+  export_mesh: true
+
 multiview_reconstruction:
   method: dust3r
   image_list: ${input}
   export_point_cloud: true
-  export_mesh: false
+  export_mesh: true
 
 visualization:
   interactive: false

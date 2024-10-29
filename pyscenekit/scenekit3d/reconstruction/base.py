@@ -17,6 +17,114 @@ from pyscenekit.scenekit3d.common import (
 
 
 @dataclass
+class SingleViewReconstructionInput:
+    image: SceneKitImage = None
+    camera: SceneKitCamera = None
+
+
+@dataclass
+class SingleViewReconstructionOutput:
+    color: np.ndarray = None
+    depth: np.ndarray = None
+    confidence: np.ndarray = None
+    mask: np.ndarray = None
+    camera: SceneKitCamera = None
+    point_cloud: SceneKitPointCloud = None
+    mesh: SceneKitMesh = None
+
+    def export_pcd(self, output_path: str):
+        self.point_cloud.export(output_path)
+
+    def export_mesh(self, output_path: str):
+        self.mesh.export(output_path)
+
+    def to_dict(self):
+        point_cloud_vertices = self.point_cloud.get_vertices()
+        point_cloud_colors = self.point_cloud.get_colors()
+
+        mesh_vertices = self.mesh.get_vertices()
+        mesh_face_colors = self.mesh.get_face_colors()
+        mesh_faces = self.mesh.get_faces()
+        return {
+            "color": self.color,
+            "depth": self.depth,
+            "confidence": self.confidence,
+            "mask": self.mask,
+            "camera": self.camera,
+            "point_cloud_vertices": point_cloud_vertices,
+            "point_cloud_colors": point_cloud_colors,
+            "mesh_vertices": mesh_vertices,
+            "mesh_face_colors": mesh_face_colors,
+            "mesh_faces": mesh_faces,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        color = data["color"]
+        depth = data["depth"]
+        confidence = data["confidence"]
+        mask = data["mask"]
+        camera = data["camera"]
+
+        point_cloud_vertices = data["point_cloud_vertices"]
+        point_cloud_colors = data["point_cloud_colors"]
+        mesh_vertices = data["mesh_vertices"]
+        mesh_face_colors = data["mesh_face_colors"]
+        mesh_faces = data["mesh_faces"]
+
+        point_cloud = SceneKitPointCloud(
+            trimesh.PointCloud(vertices=point_cloud_vertices, colors=point_cloud_colors)
+        )
+
+        mesh = SceneKitMesh(
+            trimesh.Trimesh(
+                vertices=mesh_vertices, faces=mesh_faces, face_colors=mesh_face_colors
+            )
+        )
+
+        return cls(
+            color,
+            depth,
+            confidence,
+            mask,
+            camera,
+            point_cloud,
+            mesh,
+        )
+
+
+class SingleViewReconstructionModel(abc.ABC):
+    @abc.abstractmethod
+    def __init__(self, model_name: str = None):
+        self.model_path = model_name
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = None
+
+        self.input: SceneKitImage = None
+        self.output: SingleViewReconstructionOutput = None
+
+    @abc.abstractmethod
+    def load_model(self):
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def _predict(self) -> SingleViewReconstructionOutput:
+        raise NotImplementedError
+
+    def __call__(
+        self, image: ImageInput, camera: SceneKitCamera = None
+    ) -> SingleViewReconstructionOutput:
+        input_image = SceneKitImage(image)
+        self.input = SingleViewReconstructionInput(input_image, camera)
+        output = self._predict()
+        return output
+
+    @abc.abstractmethod
+    def to(self, device: str):
+        raise NotImplementedError
+
+
+@dataclass
 class MultiViewReconstructionInput:
     image_list: List[np.ndarray] = None
     camera_list: List[SceneKitCamera] = None

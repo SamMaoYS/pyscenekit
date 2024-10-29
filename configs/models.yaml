@@ -33,3 +33,6 @@ upernet:
 # Reconstruction
 dust3r:
     model_path: "nielsr/DUSt3R_ViTLarge_BaseDecoder_512_dpt"
+
+moge:
+    model_path: "Ruicheng/moge-vitl"
