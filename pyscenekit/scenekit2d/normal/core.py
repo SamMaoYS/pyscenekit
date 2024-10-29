@@ -1,10 +1,12 @@
 from enum import Enum
 
 from pyscenekit.scenekit2d.normal.dsine import DsineNormalEstimation
+from pyscenekit.scenekit2d.normal.lotus import LotusNormalEstimation
 
 
 class NormalEstimationMethod(Enum):
     DSINE = "dsine"
+    LOTUS_NORMAL = "lotus_normal"
 
 
 class NormalEstimationModel:
@@ -15,6 +17,8 @@ class NormalEstimationModel:
         if method == NormalEstimationMethod.DSINE:
             efficientnet_path = kwargs.get("efficientnet_path", None)
             return DsineNormalEstimation(model_path, efficientnet_path)
+        elif method == NormalEstimationMethod.LOTUS_NORMAL:
+            return LotusNormalEstimation(model_path)
         else:
             raise NotImplementedError(
                 f"Normal estimation method {method} not implemented"

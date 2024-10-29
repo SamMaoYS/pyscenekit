@@ -12,10 +12,10 @@ camera_estimation:
   method: geo_calib # geo_calib
 
 depth_estimation:
-  method: midas # midas, depth_anything_v2, depth_pro
+  method: midas # midas, depth_anything_v2, depth_pro, lotus_depth
 
 normal_estimation:
-  method: dsine # dsine
+  method: dsine # dsine, lotus_normal
 
 image_segmentation:
   method: upernet # upernet

@@ -24,7 +24,31 @@ Example usage:
 python examples/normal_estimation.py normal_estimation.method=dsine output=outputs/bedroom_fluxdev_normal.jpg
 ```
 
-Currently, we support the following methods, change the `normal_estimation.method` to try different methods: `dsine`.
+Currently, we support the following methods, change the `normal_estimation.method` to try different methods: `dsine`, `lotus_normal`.
+
+## Semantic Segmentation
+
+Semantic segmentation is the task of classifying each pixel in an image into a set of predefined categories.
+
+Example usage:
+
+```bash
+python examples/image_segmentation.py image_segmentation.method=upernet input=examples/data/bedroom_fluxdev.jpg
+output=outputs/bedroom_fluxdev_semantic.jpg
+```
+
+Currently, we support the following methods, change the `image_segmentation.method` to try different methods: `upernet`.
+
+## Camera Estimation
+
+Camera estimation is the task of estimating the camera parameters from a single image, such as camera intrinsics, extrinsics, world gravity direction, etc.
+
+Example usage:
+
+```bash
+python examples/camera_estimation.py camera_estimation.method=geo_calib input=examples/data/bedroom_fluxdev.jpg
+output=outputs/bedroom_fluxdev_camera.pth
+```
 
 ## TODO
 
