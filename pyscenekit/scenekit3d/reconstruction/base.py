@@ -32,7 +32,7 @@ class MultiViewReconstructionOutput:
     point_cloud_list: List[SceneKitPointCloud] = None
     mesh_list: List[SceneKitMesh] = None
 
-    def export_pcd(self, output_path: str):
+    def export_pcd(self, output_path: str = None):
         # merge point clouds
         vertices = np.concatenate(
             [pc.get_vertices() for pc in self.point_cloud_list], axis=0
@@ -48,11 +48,12 @@ class MultiViewReconstructionOutput:
         pcd.points = o3d.utility.Vector3dVector(vertices)
         pcd.colors = o3d.utility.Vector3dVector(colors)
         pcd.normals = o3d.utility.Vector3dVector(normals)
-        o3d.io.write_point_cloud(output_path, pcd)
+        if output_path is not None:
+            o3d.io.write_point_cloud(output_path, pcd)
 
         return SceneKitPointCloud(pcd)
 
-    def export_mesh(self, output_path: str):
+    def export_mesh(self, output_path: str = None):
         vertices = np.concatenate(
             [mesh.get_vertices() for mesh in self.mesh_list], axis=0
         )
@@ -75,7 +76,8 @@ class MultiViewReconstructionOutput:
         colors = np.concatenate(colors)
         faces = np.concatenate(faces)
         mesh = trimesh.Trimesh(vertices=vertices, faces=faces, face_colors=colors)
-        mesh.export(output_path)
+        if output_path is not None:
+            mesh.export(output_path)
         return SceneKitMesh(mesh)
 
     def to_dict(self):

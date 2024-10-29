@@ -30,6 +30,9 @@ class SceneKitRender(abc.ABC):
 
         self._world_up = np.array([0, 1, 0])
 
+    def set_resolution(self, width: int, height: int):
+        self.resolution = np.array([width, height])
+
     def add_geometry(
         self,
         geometry: SceneKitGeometry,
