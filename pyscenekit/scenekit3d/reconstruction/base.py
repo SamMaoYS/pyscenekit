@@ -43,7 +43,6 @@ class SingleViewReconstructionOutput:
         point_cloud_colors = self.point_cloud.get_colors()
 
         mesh_vertices = self.mesh.get_vertices()
-        mesh_face_colors = self.mesh.get_face_colors()
         mesh_faces = self.mesh.get_faces()
         return {
             "color": self.color,
@@ -54,7 +53,6 @@ class SingleViewReconstructionOutput:
             "point_cloud_vertices": point_cloud_vertices,
             "point_cloud_colors": point_cloud_colors,
             "mesh_vertices": mesh_vertices,
-            "mesh_face_colors": mesh_face_colors,
             "mesh_faces": mesh_faces,
         }
 

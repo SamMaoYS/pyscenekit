@@ -89,9 +89,10 @@ class ScanNetPPDLSRDataset:
     def get_image_by_index(self, index: int):
         image_path = self.get_image_path_by_index(index)
         image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if self.undistort:
             image = self.undistort_image(image)
-        return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        return image
 
     def undistort_image(self, image: np.ndarray):
         map1, map2 = self.distortion_params.map1, self.distortion_params.map2

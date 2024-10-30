@@ -9,7 +9,7 @@ output: outputs/bedroom_fluxdev_pred.jpg
 
 
 camera_estimation:
-  method: geo_calib # geo_calib
+  method: geo_calib # geo_calib, vp_estimation_prior_gravity
 
 depth_estimation:
   method: midas # midas, depth_anything_v2, depth_pro, lotus_depth

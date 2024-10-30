@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 import trimesh
-from mini_dust3r.viz import pts3d_to_trimesh
+from PIL import Image
 
 from pyscenekit.scenekit3d.common import (
     SceneKitCamera,
@@ -13,7 +13,7 @@ from pyscenekit.scenekit3d.reconstruction.base import (
     SingleViewReconstructionModel,
     SingleViewReconstructionOutput,
 )
-from pyscenekit.scenekit3d.reconstruction.modules.moge import MoGeModel
+from pyscenekit.scenekit3d.reconstruction.modules.moge import MoGeModel, utils3d
 
 
 class MoGeReconstruction(SingleViewReconstructionModel):
@@ -64,10 +64,33 @@ class MoGeReconstruction(SingleViewReconstructionModel):
             point_cloud=SceneKitPointCloud.from_vertices(
                 vertices=points.reshape(-1, 3), colors=input_image.image.reshape(-1, 3)
             ),
-            mesh=SceneKitMesh(
-                trimesh.Trimesh(**pts3d_to_trimesh(input_image.image, points, mask))
-            ),
         )
+
+        image_height, image_width = input_image.image.shape[:2]
+        faces, vertices, vertex_colors, vertex_uvs = utils3d.numpy.image_mesh(
+            points,
+            input_image.image.astype(np.float32) / 255,
+            utils3d.numpy.image_uv(width=image_width, height=image_height),
+            mask=mask & ~utils3d.numpy.depth_edge(depth, rtol=0.02, mask=mask),
+            tri=True,
+        )
+        vertices, vertex_uvs = vertices, vertex_uvs * [1, -1] + [0, 1]
+
+        mesh = trimesh.Trimesh(
+            vertices=vertices,
+            faces=faces,
+            visual=trimesh.visual.texture.TextureVisuals(
+                uv=vertex_uvs,
+                material=trimesh.visual.material.PBRMaterial(
+                    baseColorTexture=Image.fromarray(input_image.image),
+                    metallicFactor=0.5,
+                    roughnessFactor=1.0,
+                ),
+            ),
+            process=False,
+        )
+
+        output.mesh = SceneKitMesh(mesh)
         return output
 
     def to(self, device: str):

@@ -524,6 +524,10 @@ class SceneKitMesh(SceneKitGeometry):
         else:
             raise ValueError(f"Unsupported mesh type: {type(self.mesh)}")
 
+    def mesh_centroid(self):
+        trimesh_mesh = self.get_trimesh_mesh()
+        return trimesh_mesh.centroid
+
 
 class SceneKitPointCloud(SceneKitGeometry):
     def __init__(

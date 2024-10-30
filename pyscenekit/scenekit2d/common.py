@@ -61,4 +61,9 @@ class SceneKitImage:
         return PIL.Image.fromarray(self.image)
 
     def resize(self, resolution: Tuple[int, int], mode: int):
-        return cv2.resize(self.image, resolution, interpolation=mode)
+        self.image = cv2.resize(self.image, resolution, interpolation=mode)
+        return self.image
+
+    def to_gray(self):
+        image = cv2.cvtColor(self.image, cv2.COLOR_RGB2GRAY)
+        return image

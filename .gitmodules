@@ -1,0 +1,3 @@
+[submodule "3rdparty/VP-Estimation-with-Prior-Gravity"]
+	path = 3rdparty/VP-Estimation-with-Prior-Gravity
+	url = git@github.com:cvg/VP-Estimation-with-Prior-Gravity.git
