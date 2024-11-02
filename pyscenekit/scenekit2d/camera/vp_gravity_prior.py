@@ -58,28 +58,3 @@ class VPEstimationPriorGravityModel:
 
     def to(self, device: str):
         pass
-
-
-class VP2Rotation:
-    def __init__(self, vps: np.ndarray, image_size: Tuple[int, int]):
-        self.vps = vps
-        self.image_width = image_size[0]
-        self.image_height = image_size[1]
-
-    def set_vps(self, vps: np.ndarray):
-        self.vps = vps
-
-    def set_image_size(self, image_size: Tuple[int, int]):
-        self.image_width = image_size[0]
-        self.image_height = image_size[1]
-
-    def __call__(self, focal_length: float):
-        K = np.array(
-            [
-                [focal_length, 0, self.image_width / 2],
-                [0, focal_length, self.image_height / 2],
-                [0, 0, 1],
-            ]
-        )
-        # TODO: Implement
-        pass
