@@ -50,8 +50,12 @@ python examples/camera_estimation.py camera_estimation.method=geo_calib input=ex
 output=outputs/bedroom_fluxdev_camera.pth
 ```
 
+Currently, we support the following methods, change the `camera_estimation.method` to try different methods: `geo_calib`, `vp_prior_gravity`, `vp_houghtransform_gaussiansphere`.
+
+> **Note**: The vanishing point estimation methods (`vp_prior_gravity`, `vp_houghtransform_gaussiansphere`) currently require additional C++ dependencies and compilation. I am working on optimizing the code and simplifying the installation process for these methods in future releases.
+Checkout the [INSTALLATION.md](./INSTALLATION.md) for more details.
+
 ## TODO
 
 - [ ] 🧩 Segmentation
-- [ ] 📷 Camera Estimation
 - [ ] 🎨 Visualization
