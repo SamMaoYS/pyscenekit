@@ -118,7 +118,6 @@ def main():
     else:
         print("CUDA is not available")
     device = torch.device(device_name)
-    import pdb; pdb.set_trace()
 
     npzfile = np.load(C.io.ht_mapping, allow_pickle=True)
     ht_mapping = npzfile["ht_mapping"]
@@ -236,6 +235,7 @@ def main():
     )
     plt.suptitle("VP prediction")
     plt.show()
+
 
 if __name__ == "__main__":
     main()

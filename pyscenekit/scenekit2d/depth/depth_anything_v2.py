@@ -44,7 +44,7 @@ class DepthAnythingV2DepthEstimation(BaseDepthEstimation):
         )
         depth = post_processed_output[0]["predicted_depth"]
         depth = depth.detach().cpu().numpy()
-        return depth
+        return {"depth": depth}
 
     def to(self, device: str):
         self.device = torch.device(device)

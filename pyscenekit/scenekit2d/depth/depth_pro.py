@@ -56,7 +56,7 @@ class DepthProDepthEstimation(BaseDepthEstimation):
         depth = prediction["depth"]
         focallength_px = prediction["focallength_px"]
         depth = depth.detach().cpu().numpy()
-        return depth
+        return {"depth": depth, "focallength_px": focallength_px}
 
     def to(self, device: str):
         self.device = torch.device(device)

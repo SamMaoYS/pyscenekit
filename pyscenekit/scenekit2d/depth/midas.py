@@ -50,7 +50,7 @@ class MidasDepthEstimation(BaseDepthEstimation):
         outputs = self.model(**inputs)
         depth = outputs.predicted_depth
         depth = depth.squeeze().cpu().numpy()
-        return depth
+        return {"depth": depth}
 
     def to(self, device: str):
         self.device = torch.device(device)

@@ -82,7 +82,7 @@ class LotusDepthEstimation(BaseDepthEstimation):
             ).images[0]
 
             depth = pred.mean(axis=-1)
-        return depth
+        return {"depth": depth}
 
     def to(self, device: str):
         self.device = torch.device(device)

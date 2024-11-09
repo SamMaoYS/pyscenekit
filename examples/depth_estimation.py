@@ -14,10 +14,25 @@ def main(cfg: DictConfig):
 
     # select model path based on method
     model_path = cfg.get(cfg.depth_estimation.method, None).model_path
-    depth_estimator = DepthEstimationModel(cfg.depth_estimation.method, model_path)
+
+    additional_kwargs = {}
+    if cfg.depth_estimation.method == "metric3d":
+        additional_kwargs["model_type"] = cfg.depth_estimation.model_type
+
+    depth_estimator = DepthEstimationModel(
+        cfg.depth_estimation.method, model_path, **additional_kwargs
+    )
     depth_estimator.to(cfg.device)
 
-    depth = depth_estimator(cfg.input)
+    if cfg.depth_estimation.method == "metric3d":
+        fx = cfg.get("fx")
+        fy = cfg.get("fy")
+        cx = cfg.get("cx")
+        cy = cfg.get("cy")
+        depth, _ = depth_estimator(cfg.input, fx=fx, fy=fy, cx=cx, cy=cy)
+    else:
+        depth, _ = depth_estimator(cfg.input)
+
     depth = depth_estimator.normalize(depth)
     depth = depth_estimator.colormap(depth, cmap="viridis")
 

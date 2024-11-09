@@ -14,6 +14,10 @@ depth_pro:
     # set to None to download from default url
     model_path:
 
+metric3d:
+    # set to None to download from default url
+    model_path:
+
 lotus_depth:
     model_path: "jingheya/lotus-depth-g-v1-0"
 

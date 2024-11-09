@@ -32,7 +32,7 @@ class BaseImageModel(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _predict(self, image: np.ndarray) -> np.ndarray:
+    def _predict(self, image: np.ndarray, **kwargs) -> np.ndarray:
         raise NotImplementedError
 
     @torch.no_grad()
@@ -41,6 +41,7 @@ class BaseImageModel(abc.ABC):
         image: ImageInput,
         resolution: Tuple[int, int] = None,
         resize_to_input: bool = True,
+        **kwargs,
     ):
         self.input = SceneKitImage(image)
 
@@ -55,16 +56,17 @@ class BaseImageModel(abc.ABC):
             )
             self.resolution_output = self.resolution_pred
 
-        output_image = self._predict(input_image)
+        output = self._predict(input_image, **kwargs)
+        output_depth = output["depth"]
         if resize_to_input:
             self.resolution_output = self.resolution_input
 
         if self.resolution_output is not None:
-            output_image = self.resize(
-                output_image, self.resolution_output, self.resize_mode
+            output_depth = self.resize(
+                output_depth, self.resolution_output, self.resize_mode
             )
 
-        return output_image
+        return output_depth, output
 
     # resize image to the given resolution
     def resize(
