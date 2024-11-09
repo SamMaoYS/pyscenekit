@@ -62,6 +62,7 @@ class ScanNetPPDLSRDataset:
         self.data_dir = data_dir
         self.undistort = undistort
         self.image_paths = self.get_image_paths()
+        self.mask_paths = self.get_mask_paths()
         self.num_images = len(self.image_paths)
         self.transforms = self.get_transforms() if self.undistort else None
         self.distortion_params = (
@@ -73,6 +74,10 @@ class ScanNetPPDLSRDataset:
         return os.path.join(self.data_dir, "resized_images")
 
     @property
+    def mask_dir(self):
+        return os.path.join(self.data_dir, "resized_anon_masks")
+
+    @property
     def transforms_path(self):
         return os.path.join(self.data_dir, "nerfstudio", "transforms.json")
 
@@ -80,11 +85,22 @@ class ScanNetPPDLSRDataset:
         return read_json(self.transforms_path)
 
     def get_image_paths(self):
+        if not os.path.exists(self.image_dir):
+            return []
         return natsorted(glob(os.path.join(self.image_dir, "*.JPG")))
+
+    def get_mask_paths(self):
+        if not os.path.exists(self.mask_dir):
+            return []
+        return natsorted(glob(os.path.join(self.mask_dir, "*.png")))
 
     def get_image_path_by_index(self, index: int):
         assert index < len(self.image_paths), "Index out of images range"
         return self.image_paths[index]
+
+    def get_mask_path_by_index(self, index: int):
+        assert index < len(self.mask_paths), "Index out of masks range"
+        return self.mask_paths[index]
 
     def get_image_by_index(self, index: int):
         image_path = self.get_image_path_by_index(index)
@@ -93,6 +109,13 @@ class ScanNetPPDLSRDataset:
         if self.undistort:
             image = self.undistort_image(image)
         return image
+
+    def get_mask_by_index(self, index: int):
+        mask_path = self.get_mask_path_by_index(index)
+        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        if self.undistort:
+            mask = self.undistort_mask(mask)
+        return mask
 
     def undistort_image(self, image: np.ndarray):
         map1, map2 = self.distortion_params.map1, self.distortion_params.map2
@@ -103,6 +126,24 @@ class ScanNetPPDLSRDataset:
             interpolation=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_REFLECT_101,
         )
+
+    def undistort_mask(self, mask: np.ndarray):
+        height, width = self.distortion_params.height, self.distortion_params.width
+        if np.all(mask > 0):
+            # No invalid pixels
+            return np.zeros((height, width), dtype=np.uint8) + 255
+
+        map1, map2 = self.distortion_params.map1, self.distortion_params.map2
+        undistorted_mask = cv2.remap(
+            mask,
+            map1,
+            map2,
+            interpolation=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=255,
+        )
+        undistorted_mask[undistorted_mask < 255] = 0
+        return undistorted_mask
 
     def get_distortion_params(self):
         height = int(self.transforms["h"])

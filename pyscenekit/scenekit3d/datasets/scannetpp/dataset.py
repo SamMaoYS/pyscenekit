@@ -1,5 +1,6 @@
 import os
 from pyscenekit.scenekit3d.datasets.scannetpp.dlsr import ScanNetPPDLSRDataset
+from pyscenekit.scenekit3d.datasets.scannetpp.iphone import ScanNetPPiPhoneDataset
 
 
 class ScanNetPPDataset:
@@ -30,6 +31,7 @@ class ScanNetPPDataset:
         self.scenes_ids = self.get_scenes_ids()
         self.current_scene_id = self.scenes_ids[0]
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
+        self.iphone_dataset = ScanNetPPiPhoneDataset(self.current_scene_iphone_path)
 
     def _update(self):
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
