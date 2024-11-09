@@ -19,6 +19,7 @@ def test_dlsr_dataset(dataset: ScanNetPPDataset, output_dir: str):
             continue
         dataset.set_scene_id(scene_id)
         undistorted_image = dataset.dlsr_dataset.get_image_by_index(0)
+        undistorted_image = cv2.cvtColor(undistorted_image, cv2.COLOR_RGB2BGR)
         # save image by scene_id
         os.makedirs(output_dir, exist_ok=True)
         cv2.imwrite(output_path, undistorted_image)
@@ -36,6 +37,7 @@ def test_dlsr_dataset(dataset: ScanNetPPDataset, output_dir: str):
         if os.path.isfile(output_path):
             continue
         undistorted_image = dataset.dlsr_dataset.get_image_by_index(i)
+        undistorted_image = cv2.cvtColor(undistorted_image, cv2.COLOR_RGB2BGR)
         cv2.imwrite(output_path, undistorted_image)
 
 
