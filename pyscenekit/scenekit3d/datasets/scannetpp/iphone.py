@@ -12,8 +12,7 @@ from tqdm import tqdm
 from natsort import natsorted
 from dataclasses import dataclass, field
 
-from pyscenekit.utils.common import read_json
-
+from pyscenekit.utils.common import log, read_json
 
 def run_command(cmd: str, verbose=False, exit_on_error=True):
     """Runs a command and returns the output.
@@ -37,9 +36,9 @@ def run_command(cmd: str, verbose=False, exit_on_error=True):
 
 # reference: https://github.com/scannetpp/scannetpp/blob/main/iphone/prepare_iphone_data.py
 class ScanNetPPiPhoneDataset:
-    def __init__(self, data_dir: str, output_dir: str):
+    def __init__(self, data_dir: str, output_dir: str=None):
         self.data_dir = data_dir
-        self.output_dir = output_dir
+        self.output_dir = output_dir if output_dir is not None else data_dir
         self.image_paths = self.get_image_paths()
         self.mask_paths = self.get_mask_paths()
         self.depth_paths = self.get_depth_paths()
@@ -71,20 +70,23 @@ class ScanNetPPiPhoneDataset:
 
     def extract_rgb(self):
         os.makedirs(self.rgb_folder, exist_ok=True)
+        log.info(f"Extracting RGB images to {self.rgb_folder}")
         output_path = os.path.join(self.rgb_folder, "frame_%06d.jpg")
-        cmd = f"ffmpeg -i {self.rgb_path} -start_number 0 -q:v 1 {output_path}"
-        run_command(cmd, verbose=True)
+        cmd = f"ffmpeg -y -i {self.rgb_path} -start_number 0 -q:v 1 {output_path}"
+        run_command(cmd, verbose=False)
 
     def extract_masks(self):
         os.makedirs(self.mask_folder, exist_ok=True)
+        log.info(f"Extracting masks to {self.mask_folder}")
         output_path = os.path.join(self.mask_folder, "frame_%06d.png")
-        cmd = f"ffmpeg -i {self.mask_path} -pix_fmt gray -start_number 0 {output_path}"
-        run_command(cmd, verbose=True)
+        cmd = f"ffmpeg -y -i {self.mask_path} -pix_fmt gray -start_number 0 {output_path}"
+        run_command(cmd, verbose=False)
 
     def extract_depth(self):
         # global compression with zlib
         height, width = 192, 256
         sample_rate = 1
+        log.info(f"Extracting depth images to {self.depth_folder}")
         os.makedirs(self.depth_folder, exist_ok=True)
 
         try:

@@ -1,4 +1,5 @@
 import os
+from natsort import natsorted
 from pyscenekit.scenekit3d.datasets.scannetpp.dlsr import ScanNetPPDLSRDataset
 from pyscenekit.scenekit3d.datasets.scannetpp.iphone import ScanNetPPiPhoneDataset
 
@@ -35,14 +36,15 @@ class ScanNetPPDataset:
 
     def _update(self):
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
+        self.iphone_dataset = ScanNetPPiPhoneDataset(self.current_scene_iphone_path)
 
     def get_scenes_ids(self):
         folders = os.listdir(self.data_dir)
-        return [
+        return natsorted([
             folder
             for folder in folders
             if os.path.isdir(os.path.join(self.data_dir, folder))
-        ]
+        ])
 
     def set_scene_id_by_index(self, index: int):
         assert index < len(self.scenes_ids), "Index out of scenes ids range"

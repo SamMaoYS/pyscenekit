@@ -3,6 +3,8 @@ import cv2
 import hydra
 from omegaconf import DictConfig
 from tqdm import tqdm
+from functools import partial
+from tqdm.contrib.concurrent import process_map
 
 from pyscenekit import attach_to_log
 from pyscenekit.utils.common import log
@@ -41,16 +43,29 @@ def test_dlsr_dataset(dataset: ScanNetPPDataset, output_dir: str):
         cv2.imwrite(output_path, undistorted_image)
 
 
+def export_iphone_dataset(cfg: DictConfig):
+    dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
+    scenes_ids = dataset.scenes_ids
+    scene_idx = int(cfg.scene_idx)
+    scene_id = scenes_ids[scene_idx]
+    log.info(f"Exporting iPhone dataset for scene {scene_id}")
+    dataset.set_scene_id(scene_id)
+    dataset.iphone_dataset.extract_rgb()
+    dataset.iphone_dataset.extract_masks()
+    dataset.iphone_dataset.extract_depth()
+        
+    
 @hydra.main(config_path="../configs", config_name="scenekit3d", version_base="1.3")
 def main(cfg: DictConfig):
     if cfg.verbose:
         attach_to_log()
 
-    dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
-    output_dir = (
-        os.path.dirname(cfg.output) if os.path.isfile(cfg.output) else cfg.output
-    )
-    test_dlsr_dataset(dataset, output_dir)
+    # output_dir = (
+    #     os.path.dirname(cfg.output) if os.path.isfile(cfg.output) else cfg.output
+    # )
+    # test_dlsr_dataset(dataset, output_dir)
+
+    export_iphone_dataset(cfg)
 
 
 if __name__ == "__main__":

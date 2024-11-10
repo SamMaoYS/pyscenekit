@@ -9,6 +9,8 @@ device: cuda # cpu, cuda
 input: examples/data/scannetpp_6b40d1a939_*.JPG
 output: outputs/reconstruction.pth
 
+num_workers: 8
+
 singleview_reconstruction:
   method: moge
   export_point_cloud: true
