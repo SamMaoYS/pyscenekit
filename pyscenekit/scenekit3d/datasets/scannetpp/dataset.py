@@ -2,6 +2,7 @@ import os
 from natsort import natsorted
 from pyscenekit.scenekit3d.datasets.scannetpp.dlsr import ScanNetPPDLSRDataset
 from pyscenekit.scenekit3d.datasets.scannetpp.iphone import ScanNetPPiPhoneDataset
+from pyscenekit.scenekit3d.datasets.scannetpp.mesh import ScanNetPPMeshDataset
 
 
 class ScanNetPPDataset:
@@ -33,10 +34,12 @@ class ScanNetPPDataset:
         self.current_scene_id = self.scenes_ids[0]
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
         self.iphone_dataset = ScanNetPPiPhoneDataset(self.current_scene_iphone_path)
+        self.mesh_dataset = ScanNetPPMeshDataset(self.current_scene_scans_path)
 
     def _update(self):
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
         self.iphone_dataset = ScanNetPPiPhoneDataset(self.current_scene_iphone_path)
+        self.mesh_dataset = ScanNetPPMeshDataset(self.current_scene_scans_path)
 
     def get_scenes_ids(self):
         folders = os.listdir(self.data_dir)

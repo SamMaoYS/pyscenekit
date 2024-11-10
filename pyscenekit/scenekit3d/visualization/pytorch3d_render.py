@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
-from pytorch3d.io import load_objs_as_meshes, load_obj
+from typing import List
+from pytorch3d.io import load_objs_as_meshes, load_ply
 from pytorch3d.structures import Meshes
 from pytorch3d.renderer import (
     PerspectiveCameras,
@@ -15,6 +15,7 @@ from pytorch3d.utils import cameras_from_opencv_projection
 
 from pyscenekit.scenekit3d.common import SceneKitCamera
 
+
 class MeshRendererWithDepth(MeshRenderer):
     def __init__(self, rasterizer, shader):
         super().__init__(rasterizer, shader)
@@ -23,6 +24,7 @@ class MeshRendererWithDepth(MeshRenderer):
         fragments = self.rasterizer(meshes_world, **kwargs)
         images = self.shader(fragments, meshes_world, **kwargs)
         return images, fragments.zbuf
+
 
 class PyTorch3DRenderer:
     def __init__(self, mesh=None, device="cuda", width=640, height=480):
@@ -48,33 +50,40 @@ class PyTorch3DRenderer:
         self.mesh = load_objs_as_meshes([obj_path], device=self.device)
         return self.mesh
 
-    def from_scenekit_camera(self, camera: SceneKitCamera):
-        camera_extrinsics = camera.extrinsics
-        R = (
-            torch.from_numpy(camera_extrinsics[:3, :3])
-            .float()
-            .unsqueeze(0)
-            .to(self.device)
-        )
-        tvec = (
-            torch.from_numpy(camera_extrinsics[:3, 3])
-            .float()
-            .unsqueeze(0)
-            .to(self.device)
-        )
-        camera_matrix = (
-            torch.from_numpy(camera.intrinsics).float().unsqueeze(0).to(self.device)
-        )
-        image_size = (
-            torch.tensor([self.height, self.width]).float().unsqueeze(0).to(self.device)
-        )
-        camera = cameras_from_opencv_projection(
+    def load_ply(self, ply_path):
+        verts, faces = load_ply(ply_path)
+        self.mesh = Meshes(verts=[verts], faces=[faces])
+        return self.mesh.to(self.device)
+
+    def convert_scenekit_cameras(self):
+        R_list = []
+        tvec_list = []
+        camera_matrix_list = []
+        image_size_list = []
+        for camera in self.cameras:
+            camera_extrinsics = camera.extrinsics
+            R = torch.from_numpy(camera_extrinsics[:3, :3]).float()
+            tvec = torch.from_numpy(camera_extrinsics[:3, 3]).float()
+            camera_matrix = torch.from_numpy(camera.intrinsics).float()
+            image_size = torch.tensor([self.height, self.width]).float()
+            R_list.append(R)
+            tvec_list.append(tvec)
+            camera_matrix_list.append(camera_matrix)
+            image_size_list.append(image_size)
+
+        R = torch.stack(R_list).to(self.device)
+        tvec = torch.stack(tvec_list).to(self.device)
+        camera_matrix = torch.stack(camera_matrix_list).to(self.device)
+        image_size = torch.stack(image_size_list).to(self.device)
+        return cameras_from_opencv_projection(
             R, tvec, camera_matrix, image_size=image_size
         )
-        return camera
 
     def add_camera(self, camera: SceneKitCamera):
-        self.cameras.append(self.from_scenekit_camera(camera))
+        self.cameras.append(camera)
+
+    def set_cameras(self, cameras: List[SceneKitCamera]):
+        self.cameras = cameras
 
     def reset_cameras(self):
         self.cameras = []
@@ -89,26 +98,28 @@ class PyTorch3DRenderer:
         self.device = torch.device(device)
 
     def rasterize(self):
+        cameras = self.convert_scenekit_cameras()
         resolutoin = [self.height, self.width]
         self.raster_settings.image_size = resolutoin
 
         rasterizer = MeshRasterizer(
-            cameras=self.cameras, raster_settings=self.raster_settings
+            cameras=cameras, raster_settings=self.raster_settings
         )
 
         fragments = rasterizer(self.mesh.to(self.device))
         return fragments
 
     def render(self):
+        cameras = self.convert_scenekit_cameras()
         resolutoin = [self.height, self.width]
         self.raster_settings.image_size = resolutoin
 
         rasterizer = MeshRasterizer(
-            cameras=self.cameras, raster_settings=self.raster_settings
+            cameras=cameras, raster_settings=self.raster_settings
         )
         shader = HardFlatShader(
             device=self.device,
-            cameras=self.cameras,
+            cameras=cameras,
         )
 
         renderer = MeshRendererWithDepth(rasterizer=rasterizer, shader=shader)

@@ -13,6 +13,8 @@ from natsort import natsorted
 from dataclasses import dataclass, field
 
 from pyscenekit.utils.common import log, read_json
+from pyscenekit.scenekit3d.common import SceneKitCamera
+from pyscenekit.scenekit3d.utils import qvec2rotmat
 
 def run_command(cmd: str, verbose=False, exit_on_error=True):
     """Runs a command and returns the output.
@@ -55,7 +57,11 @@ class ScanNetPPiPhoneDataset:
     @property
     def mask_path(self):
         return os.path.join(self.data_dir, "rgb_mask.mkv")
-
+    
+    @property
+    def colmap_path(self):
+        return os.path.join(self.data_dir, "colmap")
+    
     @property
     def rgb_folder(self):
         return os.path.join(self.output_dir, "rgb")
@@ -181,3 +187,53 @@ class ScanNetPPiPhoneDataset:
         depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
         depth = depth.astype(np.float32) / 1000.0
         return depth
+    
+    def read_cameras(self):
+        intrinsics = {}
+        intrinsics_file = os.path.join(self.colmap_path, "cameras.txt")
+        with open(intrinsics_file, "r") as fid:
+            while True:
+                line = fid.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if len(line) > 0 and line[0] != "#":
+                    elems = line.split()
+                    camera_id = int(elems[0])
+                    model = elems[1]
+                    width = int(elems[2])
+                    height = int(elems[3])
+                    params = np.array(tuple(map(float, elems[4:])))
+                    intrinsics_matrix = np.eye(3)
+                    intrinsics_matrix[0, 0] = params[0]
+                    intrinsics_matrix[1, 1] = params[1]
+                    intrinsics_matrix[0, 2] = params[2]
+                    intrinsics_matrix[1, 2] = params[3]
+                    intrinsics[camera_id] = intrinsics_matrix
+        
+        cameras = []
+        extrinsics_file = os.path.join(self.colmap_path, "images.txt")
+        with open(extrinsics_file, "r") as fid:
+            while True:
+                line = fid.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if len(line) > 0 and line[0] != "#":
+                    elems = line.split()
+                    image_id = int(elems[0])
+                    qvec = np.array(tuple(map(float, elems[1:5])))
+                    tvec = np.array(tuple(map(float, elems[5:8])))
+                    camera_id = int(elems[8])
+                    image_name = elems[9]
+                    elems = fid.readline().split()
+                    intrinsics_matrix = intrinsics[camera_id]
+                    extrinsics_matrix = np.eye(4)
+                    extrinsics_matrix[:3, :3] = qvec2rotmat(qvec)
+                    extrinsics_matrix[:3, 3] = tvec
+                    cameras.append(SceneKitCamera(
+                        intrinsics=intrinsics_matrix,
+                        extrinsics=extrinsics_matrix,
+                        name=image_name,
+                    ))
+        return cameras
