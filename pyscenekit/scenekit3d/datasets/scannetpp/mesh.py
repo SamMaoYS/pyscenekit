@@ -28,23 +28,44 @@ class ScanNetPPMeshDataset:
     def set_cameras(self, cameras: dict):
         self.cameras = cameras
 
-    def export_all_depth(self, output_dir: str):
+    def export_all_depth(self, output_dir: str, target_resolution: int = 0):
         num_cameras = len(self.cameras)
         start_idx = self.start_idx
         batch_size = self.batch_size
         end_idx = self.end_idx if self.end_idx != -1 else num_cameras
 
+        if target_resolution <= 0:
+            target_resolution = self.cameras[0].width
+
+        os.makedirs(output_dir, exist_ok=True)
+        self.load_mesh()
         for i in range(start_idx, end_idx, batch_size):
             batch_cameras = self.cameras[i : i + batch_size]
-            depth = self.render_depth(batch_cameras)
+            from time import time
 
-            import pdb
+            start = time()
+            depth = self.render_depth(batch_cameras, target_resolution)
+            end = time()
+            print(f"Time taken: {end - start} seconds")
 
-            pdb.set_trace()
+            for i in range(len(depth)):
+                camera = batch_cameras[i]
+                depth_i = depth[i, :, :, 0]
+                # min max normalize
+                mask = depth_i < 0
+                depth_i[mask] = 0
 
-    def render_depth(self, cameras: List[SceneKitCamera]):
+                print(depth_i.min(), depth_i.max())
+                depth_i = (depth_i - depth_i.min()) / (depth_i.max() - depth_i.min())
+                depth_i = (depth_i * 255).astype(np.uint8)
+                file_name = camera.name.replace(".jpg", ".png")
+                cv2.imwrite(os.path.join(output_dir, file_name), depth_i)
+
+    def load_mesh(self):
         self.renderer.load_ply(self.mesh_path)
+
+    def render_depth(self, cameras: List[SceneKitCamera], target_resolution: int = 640):
         self.renderer.set_cameras(cameras)
-        fragments = self.renderer.rasterize()
+        fragments = self.renderer.rasterize(target_resolution)
         depth = fragments.zbuf.cpu().numpy()
         return depth

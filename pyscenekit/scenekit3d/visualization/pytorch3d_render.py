@@ -55,17 +55,24 @@ class PyTorch3DRenderer:
         self.mesh = Meshes(verts=[verts], faces=[faces])
         return self.mesh.to(self.device)
 
-    def convert_scenekit_cameras(self):
+    def convert_scenekit_cameras(self, target_resolution: int = 640):
         R_list = []
         tvec_list = []
         camera_matrix_list = []
         image_size_list = []
         for camera in self.cameras:
+            height = camera.height
+            width = camera.width
+
+            scale = target_resolution / self.width
+            width = int(width * scale)
+            height = int(height * scale)
             camera_extrinsics = camera.extrinsics
             R = torch.from_numpy(camera_extrinsics[:3, :3]).float()
             tvec = torch.from_numpy(camera_extrinsics[:3, 3]).float()
             camera_matrix = torch.from_numpy(camera.intrinsics).float()
-            image_size = torch.tensor([self.height, self.width]).float()
+            camera_matrix[:2, :] = camera_matrix[:2, :] * scale
+            image_size = torch.tensor([height, width]).float()
             R_list.append(R)
             tvec_list.append(tvec)
             camera_matrix_list.append(camera_matrix)
@@ -97,21 +104,26 @@ class PyTorch3DRenderer:
     def set_device(self, device="cuda:0"):
         self.device = torch.device(device)
 
-    def rasterize(self):
-        cameras = self.convert_scenekit_cameras()
-        resolutoin = [self.height, self.width]
+    def rasterize(self, target_resolution: int = 640):
+        cameras = self.convert_scenekit_cameras(target_resolution)
+        image_size = cameras[0].image_size[0].cpu().numpy()
+        resolutoin = [int(image_size[0]), int(image_size[1])]
         self.raster_settings.image_size = resolutoin
 
         rasterizer = MeshRasterizer(
             cameras=cameras, raster_settings=self.raster_settings
         )
 
-        fragments = rasterizer(self.mesh.to(self.device))
+        batch_size = len(cameras)
+        if len(self.mesh.verts_list()) != batch_size:
+            self.mesh = self.mesh.extend(batch_size).to(self.device)
+        fragments = rasterizer(self.mesh)
         return fragments
 
-    def render(self):
-        cameras = self.convert_scenekit_cameras()
-        resolutoin = [self.height, self.width]
+    def render(self, target_resolution: int = 640):
+        cameras = self.convert_scenekit_cameras(target_resolution)
+        image_size = cameras[0].image_size[0].cpu().numpy()
+        resolutoin = [int(image_size[0]), int(image_size[1])]
         self.raster_settings.image_size = resolutoin
 
         rasterizer = MeshRasterizer(
@@ -123,5 +135,8 @@ class PyTorch3DRenderer:
         )
 
         renderer = MeshRendererWithDepth(rasterizer=rasterizer, shader=shader)
-        images, depth = renderer(self.mesh.to(self.device))
+        batch_size = len(cameras)
+        if len(self.mesh.verts_list()) != batch_size:
+            self.mesh = self.mesh.extend(batch_size).to(self.device)
+        images, depth = renderer(self.mesh)
         return images, depth

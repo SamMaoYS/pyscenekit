@@ -46,15 +46,28 @@ def test_dlsr_dataset(dataset: ScanNetPPDataset, output_dir: str):
 def export_iphone_dataset(cfg: DictConfig):
     dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
     scenes_ids = dataset.scenes_ids
-    scene_idx = int(cfg.scene_idx)
-    scene_id = scenes_ids[scene_idx]
+    # scene_idx = int(cfg.scene_idx)
+    # scene_id = scenes_ids[scene_idx]
+    scene_id = cfg.scene_id
     log.info(f"Exporting iPhone dataset for scene {scene_id}")
     dataset.set_scene_id(scene_id)
     dataset.iphone_dataset.extract_rgb()
     dataset.iphone_dataset.extract_masks()
     dataset.iphone_dataset.extract_depth()
-        
-    
+
+
+def render_iphone_depth(cfg: DictConfig):
+    dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
+    dataset.set_scene_id(cfg.scene_id)
+    cameras = dataset.iphone_dataset.read_cameras()
+
+    mesh_dataset = dataset.mesh_dataset
+    mesh_dataset.set_cameras(cameras)
+    mesh_dataset.export_all_depth(
+        output_dir=os.path.join(dataset.iphone_dataset.output_dir, "render_depth")
+    )
+
+
 @hydra.main(config_path="../configs", config_name="scenekit3d", version_base="1.3")
 def main(cfg: DictConfig):
     if cfg.verbose:
@@ -65,7 +78,9 @@ def main(cfg: DictConfig):
     # )
     # test_dlsr_dataset(dataset, output_dir)
 
-    export_iphone_dataset(cfg)
+    # export_iphone_dataset(cfg)
+
+    render_iphone_depth(cfg)
 
 
 if __name__ == "__main__":

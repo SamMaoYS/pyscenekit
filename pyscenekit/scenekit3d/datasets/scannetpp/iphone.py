@@ -259,9 +259,11 @@ class ScanNetPPiPhoneDataset:
             else:
                 intrinsics = intrinsics_data["K"]
             camera = SceneKitCamera(
-                image_name=image_name,
+                name=image_name,
                 intrinsics=intrinsics,
                 extrinsics=extrinsics,
+                width=intrinsics_data["width"],
+                height=intrinsics_data["height"],
             )
             cameras.append(camera)
         return cameras

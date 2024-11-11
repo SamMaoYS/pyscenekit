@@ -18,11 +18,15 @@ class SceneKitCamera:
         intrinsics: np.ndarray = None,
         extrinsics: np.ndarray = np.eye(4),
         name: str = "camera",
+        width: int = None,
+        height: int = None,
     ):
         self.intrinsics = intrinsics
         self.extrinsics = extrinsics
         self.name = name
         self.camera_pose = np.linalg.inv(extrinsics)
+        self.width = width
+        self.height = height
 
         if self.intrinsics is None:
             self.intrinsics = o3d.camera.PinholeCameraIntrinsic(
@@ -42,6 +46,12 @@ class SceneKitCamera:
 
     def set_name(self, name: str):
         self.name = name
+
+    def scale_camera(self, target_resolution: int = 640):
+        scale = target_resolution / self.width
+        self.intrinsics[:2, :] = self.intrinsics[:2, :] * scale
+        self.width = int(self.width * scale)
+        self.height = int(self.height * scale)
 
     @property
     def fx(self):
