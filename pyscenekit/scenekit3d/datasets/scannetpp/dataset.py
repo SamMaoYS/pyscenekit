@@ -31,10 +31,10 @@ class ScanNetPPDataset:
     def __init__(self, data_dir: str):
         self.data_dir = data_dir
         self.scenes_ids = self.get_scenes_ids()
-        self.current_scene_id = self.scenes_ids[0]
-        self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
-        self.iphone_dataset = ScanNetPPiPhoneDataset(self.current_scene_iphone_path)
-        self.mesh_dataset = ScanNetPPMeshDataset(self.current_scene_scans_path)
+        self.current_scene_id = None
+        self.dlsr_dataset = None
+        self.iphone_dataset = None
+        self.mesh_dataset = None
 
     def _update(self):
         self.dlsr_dataset = ScanNetPPDLSRDataset(self.current_scene_dslr_path)
@@ -43,11 +43,13 @@ class ScanNetPPDataset:
 
     def get_scenes_ids(self):
         folders = os.listdir(self.data_dir)
-        return natsorted([
-            folder
-            for folder in folders
-            if os.path.isdir(os.path.join(self.data_dir, folder))
-        ])
+        return natsorted(
+            [
+                folder
+                for folder in folders
+                if os.path.isdir(os.path.join(self.data_dir, folder))
+            ]
+        )
 
     def set_scene_id_by_index(self, index: int):
         assert index < len(self.scenes_ids), "Index out of scenes ids range"

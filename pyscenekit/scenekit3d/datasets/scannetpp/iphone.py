@@ -16,6 +16,7 @@ from pyscenekit.utils.common import log, read_json
 from pyscenekit.scenekit3d.common import SceneKitCamera
 from pyscenekit.scenekit3d.utils import qvec2rotmat
 
+
 def run_command(cmd: str, verbose=False, exit_on_error=True):
     """Runs a command and returns the output.
 
@@ -38,13 +39,18 @@ def run_command(cmd: str, verbose=False, exit_on_error=True):
 
 # reference: https://github.com/scannetpp/scannetpp/blob/main/iphone/prepare_iphone_data.py
 class ScanNetPPiPhoneDataset:
-    def __init__(self, data_dir: str, output_dir: str=None):
+    def __init__(self, data_dir: str, output_dir: str = None, undistort: bool = True):
         self.data_dir = data_dir
         self.output_dir = output_dir if output_dir is not None else data_dir
         self.image_paths = self.get_image_paths()
         self.mask_paths = self.get_mask_paths()
         self.depth_paths = self.get_depth_paths()
         self.num_images = len(self.image_paths)
+        self.undistort = undistort
+
+        self._intrinsics = {}
+        self._extrinsics = {}
+        self._read_cameras()
 
     @property
     def rgb_path(self):
@@ -57,11 +63,11 @@ class ScanNetPPiPhoneDataset:
     @property
     def mask_path(self):
         return os.path.join(self.data_dir, "rgb_mask.mkv")
-    
+
     @property
     def colmap_path(self):
         return os.path.join(self.data_dir, "colmap")
-    
+
     @property
     def rgb_folder(self):
         return os.path.join(self.output_dir, "rgb")
@@ -74,24 +80,53 @@ class ScanNetPPiPhoneDataset:
     def mask_folder(self):
         return os.path.join(self.output_dir, "mask")
 
-    def extract_rgb(self):
+    def extract_rgb(self, num_workers: int = 4):
+        from pyscenekit.scenekit3d.datasets.multiscan.decoder import DecoderRGB
+
+        frame_indices = list(self._extrinsics.keys())
+        frame_indices = [
+            int(os.path.basename(frame_index).split("_")[1].split(".")[0])
+            for frame_index in frame_indices
+        ]
+
+        decoder = DecoderRGB(self.rgb_path)
+        decoder.frame_indices = frame_indices
         os.makedirs(self.rgb_folder, exist_ok=True)
         log.info(f"Extracting RGB images to {self.rgb_folder}")
-        output_path = os.path.join(self.rgb_folder, "frame_%06d.jpg")
-        cmd = f"ffmpeg -y -i {self.rgb_path} -start_number 0 -q:v 1 {output_path}"
-        run_command(cmd, verbose=False)
+        decoder.export(
+            self.rgb_folder,
+            format="jpg",
+            frame_param={"width": 0, "height": 0},
+            num_workers=num_workers,
+        )
 
-    def extract_masks(self):
+    def extract_masks(self, num_workers: int = 4):
+        from pyscenekit.scenekit3d.datasets.multiscan.decoder import DecoderRGB
+
+        frame_indices = list(self._extrinsics.keys())
+        frame_indices = [
+            int(os.path.basename(frame_index).split("_")[1].split(".")[0])
+            for frame_index in frame_indices
+        ]
+        decoder = DecoderRGB(self.mask_path)
+        decoder.frame_indices = frame_indices
         os.makedirs(self.mask_folder, exist_ok=True)
         log.info(f"Extracting masks to {self.mask_folder}")
-        output_path = os.path.join(self.mask_folder, "frame_%06d.png")
-        cmd = f"ffmpeg -y -i {self.mask_path} -pix_fmt gray -start_number 0 {output_path}"
-        run_command(cmd, verbose=False)
+        decoder.export(
+            self.mask_folder,
+            format="png",
+            frame_param={"width": 0, "height": 0, "grayscale": True},
+            num_workers=num_workers,
+        )
 
     def extract_depth(self):
         # global compression with zlib
         height, width = 192, 256
-        sample_rate = 1
+        frame_indices = list(self._extrinsics.keys())
+        frame_indices = [
+            int(os.path.basename(frame_index).split("_")[1].split(".")[0])
+            for frame_index in frame_indices
+        ]
         log.info(f"Extracting depth images to {self.depth_folder}")
         os.makedirs(self.depth_folder, exist_ok=True)
 
@@ -101,9 +136,7 @@ class ScanNetPPiPhoneDataset:
                 data = zlib.decompress(data, wbits=-zlib.MAX_WBITS)
                 depth = np.frombuffer(data, dtype=np.float32).reshape(-1, height, width)
 
-            for frame_id in tqdm(
-                range(0, depth.shape[0], sample_rate), desc="decode_depth"
-            ):
+            for frame_id in tqdm(frame_indices, desc="decode_depth"):
                 iio.imwrite(
                     os.path.join(self.depth_folder, f"frame_{frame_id:06}.png"),
                     (depth * 1000).astype(np.uint16),
@@ -117,7 +150,7 @@ class ScanNetPPiPhoneDataset:
                     if len(size) == 0:
                         break
                     size = int.from_bytes(size, byteorder="little")
-                    if frame_id % sample_rate != 0:
+                    if frame_id not in frame_indices:
                         infile.seek(size, 1)
                         frame_id += 1
                         continue
@@ -174,12 +207,35 @@ class ScanNetPPiPhoneDataset:
     def get_image_by_index(self, index: int):
         image_path = self.get_image_path_by_index(index)
         image = cv2.imread(image_path)
+        if self.undistort:
+            image_name = os.path.basename(image_path)
+            camera_id = self._extrinsics.get(image_name, {}).get("camera_id", None)
+            if camera_id is not None:
+                image = cv2.remap(
+                    image,
+                    self._intrinsics[camera_id]["map1"],
+                    self._intrinsics[camera_id]["map2"],
+                    interpolation=cv2.INTER_LINEAR,
+                    borderMode=cv2.BORDER_REFLECT_101,
+                )
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image
 
     def get_mask_by_index(self, index: int):
         mask_path = self.get_mask_path_by_index(index)
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+        if self.undistort:
+            image_name = os.path.basename(mask_path).replace(".png", ".jpg")
+            camera_id = self._extrinsics.get(image_name, {}).get("camera_id", None)
+            if camera_id is not None:
+                mask = cv2.remap(
+                    mask,
+                    self._intrinsics[camera_id]["map1"],
+                    self._intrinsics[camera_id]["map2"],
+                    interpolation=cv2.INTER_LINEAR,
+                    borderMode=cv2.BORDER_CONSTANT,
+                    borderValue=255,
+                )
         return mask
 
     def get_depth_by_index(self, index: int):
@@ -187,9 +243,30 @@ class ScanNetPPiPhoneDataset:
         depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
         depth = depth.astype(np.float32) / 1000.0
         return depth
-    
+
     def read_cameras(self):
-        intrinsics = {}
+        # check if self._intrinsics and self._extrinsics are empty
+        if len(self._intrinsics) == 0 or len(self._extrinsics) == 0:
+            self._read_cameras()
+
+        cameras = []
+
+        for image_name, extrinsics_data in self._extrinsics.items():
+            intrinsics_data = self._intrinsics[extrinsics_data["camera_id"]]
+            extrinsics = extrinsics_data["extrinsics"]
+            if self.undistort:
+                intrinsics = intrinsics_data["new_K"]
+            else:
+                intrinsics = intrinsics_data["K"]
+            camera = SceneKitCamera(
+                image_name=image_name,
+                intrinsics=intrinsics,
+                extrinsics=extrinsics,
+            )
+            cameras.append(camera)
+        return cameras
+
+    def _read_cameras(self):
         intrinsics_file = os.path.join(self.colmap_path, "cameras.txt")
         with open(intrinsics_file, "r") as fid:
             while True:
@@ -209,9 +286,36 @@ class ScanNetPPiPhoneDataset:
                     intrinsics_matrix[1, 1] = params[1]
                     intrinsics_matrix[0, 2] = params[2]
                     intrinsics_matrix[1, 2] = params[3]
-                    intrinsics[camera_id] = intrinsics_matrix
-        
-        cameras = []
+                    distortion_params = np.array(tuple(map(float, params[4:])))
+
+                    new_K, _ = cv2.getOptimalNewCameraMatrix(
+                        intrinsics_matrix,
+                        distortion_params,
+                        (width, height),
+                        1,
+                        (width, height),
+                        True,
+                    )
+                    map1, map2 = cv2.initUndistortRectifyMap(
+                        intrinsics_matrix,
+                        distortion_params,
+                        np.eye(3),
+                        new_K,
+                        (width, height),
+                        cv2.CV_32FC1,
+                    )
+
+                    self._intrinsics[camera_id] = {
+                        "model": model,
+                        "width": width,
+                        "height": height,
+                        "K": intrinsics_matrix,
+                        "distortion_params": distortion_params,
+                        "new_K": new_K,
+                        "map1": map1,
+                        "map2": map2,
+                    }
+
         extrinsics_file = os.path.join(self.colmap_path, "images.txt")
         with open(extrinsics_file, "r") as fid:
             while True:
@@ -227,13 +331,13 @@ class ScanNetPPiPhoneDataset:
                     camera_id = int(elems[8])
                     image_name = elems[9]
                     elems = fid.readline().split()
-                    intrinsics_matrix = intrinsics[camera_id]
+                    intrinsics_matrix = self._intrinsics[camera_id]["K"]
                     extrinsics_matrix = np.eye(4)
                     extrinsics_matrix[:3, :3] = qvec2rotmat(qvec)
                     extrinsics_matrix[:3, 3] = tvec
-                    cameras.append(SceneKitCamera(
-                        intrinsics=intrinsics_matrix,
-                        extrinsics=extrinsics_matrix,
-                        name=image_name,
-                    ))
-        return cameras
+
+                    self._extrinsics[image_name] = {
+                        "image_id": image_id,
+                        "camera_id": camera_id,
+                        "extrinsics": extrinsics_matrix,
+                    }

@@ -17,6 +17,7 @@ class ExportFrameParam:
     crop_str: str = ""
     scale: list[int] = field(init=False)
     crop: list[int] = field(init=False)
+    grayscale: bool = False
 
     def __post_init__(self):
         if self.scale_str:
@@ -30,8 +31,9 @@ def get_export_frame_param(frame_param: dict) -> ExportFrameParam:
         width=frame_param["width"],
         height=frame_param["height"],
         dtype=frame_param["dtype"],
-        scale_str=frame_param["scale"],
-        crop_str=frame_param["crop"],
+        scale_str=frame_param.get("scale", ""),
+        crop_str=frame_param.get("crop", ""),
+        grayscale=frame_param.get("grayscale", False),
     )
 
 
@@ -41,12 +43,14 @@ def export_frame(
     efp = get_export_frame_param(frame_param)
     frame_data, frame_index = frame
     img = Image.fromarray(frame_data.astype(efp.dtype))
+    if efp.grayscale:
+        img = img.convert("L")
     if hasattr(efp, "scale"):
         img = img.resize(efp.scale)
     if hasattr(efp, "crop"):
         img = img.crop((efp.crop[0], efp.crop[1], efp.crop[2], efp.crop[3]))
     os.makedirs(output_dir, exist_ok=True)
-    img.save(os.path.join(output_dir, f"{frame_index:08d}.{format}"))
+    img.save(os.path.join(output_dir, f"frame_{frame_index:06d}.{format}"))
 
 
 def export_camera(
@@ -114,10 +118,10 @@ def export_data(
             partial(
                 func, output_dir=output_dir, frame_param=frame_param, format=format
             ),
-            zip(data, frame_indices + 1),
+            zip(data, frame_indices),
             disable=True,
             max_workers=num_workers,
         )
     else:
-        for data_i in zip(data, frame_indices + 1):
+        for data_i in zip(data, frame_indices):
             func(data_i, output_dir, frame_param, format)
