@@ -55,9 +55,7 @@ class ScanNetPPMeshDataset:
                 mask = depth_i < 0
                 depth_i[mask] = 0
 
-                print(depth_i.min(), depth_i.max())
-                depth_i = (depth_i - depth_i.min()) / (depth_i.max() - depth_i.min())
-                depth_i = (depth_i * 255).astype(np.uint8)
+                depth_i = (depth_i * 1000).astype(np.uint16)
                 file_name = camera.name.replace(".jpg", ".png")
                 cv2.imwrite(os.path.join(output_dir, file_name), depth_i)
 
