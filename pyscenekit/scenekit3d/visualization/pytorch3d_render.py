@@ -115,9 +115,7 @@ class PyTorch3DRenderer:
         )
 
         batch_size = len(cameras)
-        if len(self.mesh.verts_list()) != batch_size:
-            self.mesh = self.mesh.extend(batch_size).to(self.device)
-        fragments = rasterizer(self.mesh)
+        fragments = rasterizer(self.mesh.extend(batch_size).to(self.device))
         return fragments
 
     def render(self, target_resolution: int = 640):
@@ -136,7 +134,5 @@ class PyTorch3DRenderer:
 
         renderer = MeshRendererWithDepth(rasterizer=rasterizer, shader=shader)
         batch_size = len(cameras)
-        if len(self.mesh.verts_list()) != batch_size:
-            self.mesh = self.mesh.extend(batch_size).to(self.device)
-        images, depth = renderer(self.mesh)
+        images, depth = renderer(self.mesh.extend(batch_size).to(self.device))
         return images, depth
