@@ -64,7 +64,7 @@ class PyTorch3DRenderer:
             height = camera.height
             width = camera.width
 
-            scale = target_resolution / self.width
+            scale = target_resolution / width
             width = int(width * scale)
             height = int(height * scale)
             camera_extrinsics = camera.extrinsics
