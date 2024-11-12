@@ -46,14 +46,13 @@ def test_dlsr_dataset(dataset: ScanNetPPDataset, output_dir: str):
 def export_iphone_dataset(cfg: DictConfig):
     dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
     scenes_ids = dataset.scenes_ids
-    # scene_idx = int(cfg.scene_idx)
-    # scene_id = scenes_ids[scene_idx]
-    scene_id = cfg.scene_id
+    scene_idx = int(cfg.scene_idx)
+    scene_id = scenes_ids[scene_idx]
     log.info(f"Exporting iPhone dataset for scene {scene_id}")
     dataset.set_scene_id(scene_id)
-    dataset.iphone_dataset.extract_rgb()
-    dataset.iphone_dataset.extract_masks()
-    dataset.iphone_dataset.extract_depth()
+    dataset.iphone_dataset.extract_rgb(num_workers=2)
+    dataset.iphone_dataset.extract_masks(num_workers=2)
+    # dataset.iphone_dataset.extract_depth()
 
 
 def render_iphone_depth(cfg: DictConfig):
@@ -68,6 +67,72 @@ def render_iphone_depth(cfg: DictConfig):
     )
 
 
+def unproject_render_depth(cfg: DictConfig):
+    import open3d as o3d
+    from pyscenekit.scenekit3d.common import SceneKitStructuredPointCloud
+
+    dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
+    dataset.set_scene_id(cfg.scene_id)
+    cameras = dataset.iphone_dataset.read_cameras()
+
+    rgb_dir = os.path.join(dataset.iphone_dataset.output_dir, "rgb")
+    depth_dir = os.path.join(dataset.iphone_dataset.output_dir, "render_depth")
+    output_dir = os.path.join(dataset.iphone_dataset.output_dir, "point_cloud")
+    os.makedirs(output_dir, exist_ok=True)
+    for i in tqdm(range(len(cameras))):
+        camera = cameras[i]
+        image_name = camera.name.split(".")[0]
+        rgb_path = os.path.join(rgb_dir, f"{image_name}.jpg")
+        depth_path = os.path.join(depth_dir, f"{image_name}.png")
+
+        point_cloud = SceneKitStructuredPointCloud(
+            depth_path, camera, rgb_path
+        ).point_cloud
+        o3d.io.write_point_cloud(
+            os.path.join(output_dir, f"{image_name}.ply"), point_cloud
+        )
+
+
+def depth_to_normal(cfg: DictConfig):
+    import cv2
+    import numpy as np
+    from pyscenekit.scenekit3d.common import SceneKitStructuredPointCloud
+
+    dataset = ScanNetPPDataset(cfg.scannetpp.data_dir)
+    dataset.set_scene_id(cfg.scene_id)
+    cameras = dataset.iphone_dataset.read_cameras()
+
+    rgb_dir = os.path.join(dataset.iphone_dataset.output_dir, "rgb")
+    depth_dir = os.path.join(dataset.iphone_dataset.output_dir, "render_depth")
+    output_dir = os.path.join(dataset.iphone_dataset.output_dir, "normal")
+    os.makedirs(output_dir, exist_ok=True)
+    for i in tqdm(range(len(cameras))):
+        camera = cameras[i]
+        camera.set_camera_pose(np.eye(4))
+        image_name = camera.name.split(".")[0]
+        rgb_path = os.path.join(rgb_dir, f"{image_name}.jpg")
+        depth_path = os.path.join(depth_dir, f"{image_name}.png")
+
+        skt_point_cloud = SceneKitStructuredPointCloud(depth_path, camera, rgb_path)
+        point_cloud = skt_point_cloud.point_cloud
+        point_cloud.estimate_normals()
+        point_cloud.orient_normals_towards_camera_location(camera.camera_pose[:3, 3])
+
+        depth_image = np.asarray(skt_point_cloud.depth_image)
+        normals = np.asarray(point_cloud.normals)
+        depth_mask = depth_image > 0
+        normal_image = np.zeros((depth_image.shape[0], depth_image.shape[1], 3))
+        normal_image[depth_mask] = normals
+
+        normal_image = (-normal_image + 1) * 127.5
+        normal_image[~depth_mask] = 0
+        normal_image = normal_image.astype(np.uint8)
+        cv2.imwrite(
+            os.path.join(output_dir, f"{image_name}.png"),
+            cv2.cvtColor(normal_image, cv2.COLOR_RGB2BGR),
+        )
+
+
 @hydra.main(config_path="../configs", config_name="scenekit3d", version_base="1.3")
 def main(cfg: DictConfig):
     if cfg.verbose:
@@ -78,9 +143,13 @@ def main(cfg: DictConfig):
     # )
     # test_dlsr_dataset(dataset, output_dir)
 
-    # export_iphone_dataset(cfg)
+    export_iphone_dataset(cfg)
 
     render_iphone_depth(cfg)
+
+    unproject_render_depth(cfg)
+
+    depth_to_normal(cfg)
 
 
 if __name__ == "__main__":

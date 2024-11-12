@@ -612,9 +612,12 @@ class SceneKitStructuredPointCloud:
         depth_image: Union[str, np.ndarray, o3d.geometry.Image],
         camera: SceneKitCamera,
         rgb_image: Union[str, np.ndarray, o3d.geometry.Image] = None,
+        depth_scale=1.0,
+        depth_trunc=20.0,
+        target_resolution=640,
     ):
         if isinstance(depth_image, str):
-            self.depth_image = cv2.imread(depth_image, cv2.IMREAD_UNCHANGED)
+            depth_image = cv2.imread(depth_image, cv2.IMREAD_UNCHANGED)
 
         if isinstance(depth_image, np.ndarray):
             # convert to meters
@@ -626,6 +629,17 @@ class SceneKitStructuredPointCloud:
             self.depth_image = depth_image
         else:
             raise ValueError(f"Unsupported depth_image type: {type(depth_image)}")
+
+        dh, dw = np.array(self.depth_image).shape[:2]
+        if dw != target_resolution:
+            ratio = target_resolution / dw
+            new_dh = int(dh * ratio)
+            new_dw = target_resolution
+            depth_np = np.asarray(self.depth_image)
+            depth_np = cv2.resize(
+                depth_np, (new_dw, new_dh), interpolation=cv2.INTER_NEAREST
+            )
+            self.depth_image = o3d.geometry.Image(depth_np)
 
         self.rgb_image = None
         if rgb_image is not None:
@@ -642,40 +656,88 @@ class SceneKitStructuredPointCloud:
             else:
                 raise ValueError(f"Unsupported rgb_image type: {type(rgb_image)}")
 
+        dh, dw = np.array(self.rgb_image).shape[:2]
+        if dw != target_resolution:
+            ratio = target_resolution / dw
+            new_dh = int(dh * ratio)
+            new_dw = target_resolution
+            rgb_np = np.asarray(self.rgb_image)
+            rgb_np = cv2.resize(
+                rgb_np, (new_dw, new_dh), interpolation=cv2.INTER_LINEAR
+            )
+            self.rgb_image = o3d.geometry.Image(rgb_np)
+
         self.camera = camera
 
-        self.point_cloud = self.unproject_point_cloud()
+        self.point_cloud = self.unproject_point_cloud(
+            depth_scale=depth_scale,
+            depth_trunc=depth_trunc,
+            target_resolution=target_resolution,
+        )
 
-    def unproject_point_cloud(self, colormap_depth: bool = False):
-        image_width, image_height = self.rgb_image.width, self.rgb_image.height
+    def unproject_point_cloud(
+        self,
+        depth_scale=1.0,
+        depth_trunc=20,
+        target_resolution=640,
+        colormap_depth: bool = False,
+    ):
+        image_height, image_width = np.asarray(self.depth_image).shape[:2]
+        camera_ratio = target_resolution / self.camera.width
         o3d_intrinsics = o3d.camera.PinholeCameraIntrinsic(
             width=image_width,
             height=image_height,
-            fx=self.camera.intrinsics[0, 0],
-            fy=self.camera.intrinsics[1, 1],
-            cx=self.camera.intrinsics[0, 2],
-            cy=self.camera.intrinsics[1, 2],
+            fx=self.camera.intrinsics[0, 0] * camera_ratio,
+            fy=self.camera.intrinsics[1, 1] * camera_ratio,
+            cx=self.camera.intrinsics[0, 2] * camera_ratio,
+            cy=self.camera.intrinsics[1, 2] * camera_ratio,
         )
 
         if colormap_depth:
             self.rgb_image = self.colormap_depth()
 
         if self.rgb_image is not None:
-            return self._unproject_rgbd(o3d_intrinsics)
+            return self._unproject_rgbd(
+                o3d_intrinsics,
+                depth_scale=depth_scale,
+                depth_trunc=depth_trunc,
+            )
         else:
-            return self._unproject_depth(o3d_intrinsics)
+            return self._unproject_depth(
+                o3d_intrinsics,
+                depth_scale=depth_scale,
+                depth_trunc=depth_trunc,
+            )
 
-    def _unproject_rgbd(self, o3d_intrinsics: o3d.camera.PinholeCameraIntrinsic):
+    def _unproject_rgbd(
+        self,
+        o3d_intrinsics: o3d.camera.PinholeCameraIntrinsic,
+        depth_scale=1.0,
+        depth_trunc=20,
+    ):
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
-            self.rgb_image, self.depth_image
+            self.rgb_image,
+            self.depth_image,
+            depth_scale=depth_scale,
+            depth_trunc=depth_trunc,
+            convert_rgb_to_intensity=False,
         )
         return o3d.geometry.PointCloud.create_from_rgbd_image(
             rgbd, o3d_intrinsics, self.camera.extrinsics
         )
 
-    def _unproject_depth(self, o3d_intrinsics: o3d.camera.PinholeCameraIntrinsic):
+    def _unproject_depth(
+        self,
+        o3d_intrinsics: o3d.camera.PinholeCameraIntrinsic,
+        depth_scale=1.0,
+        depth_trunc=20,
+    ):
         return o3d.geometry.PointCloud.create_from_depth_image(
-            self.depth_image, o3d_intrinsics, self.camera.extrinsics
+            self.depth_image,
+            o3d_intrinsics,
+            self.camera.extrinsics,
+            depth_scale=depth_scale,
+            depth_trunc=depth_trunc,
         )
 
     def colormap_depth(self):
