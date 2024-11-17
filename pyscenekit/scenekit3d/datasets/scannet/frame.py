@@ -246,7 +246,9 @@ class SensorData:
 
 # reference: https://github.com/scannetpp/scannetpp/blob/main/dslr/undistort.py
 class ScanNetFrameDataset:
-    def __init__(self, scene_id: str, data_dir: str, output_dir: str = None):
+    def __init__(
+        self, scene_id: str, data_dir: str, output_dir: str = None, read_sens=False
+    ):
         self.scene_id = scene_id
         self.data_dir = data_dir
         self.output_dir = output_dir if output_dir is not None else data_dir
@@ -255,7 +257,9 @@ class ScanNetFrameDataset:
         assert os.path.isfile(
             self.sensfile_path
         ), f"File {self.sensfile_path} not found"
-        self.sensor_data = SensorData(self.sensfile_path)
+        self.sensor_data = None
+        if read_sens:
+            self.sensor_data = SensorData(self.sensfile_path)
 
     @property
     def sensfile_path(self):
