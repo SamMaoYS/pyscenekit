@@ -56,8 +56,34 @@ class ScanNetPPMeshDataset:
                 depth_i[mask] = 0
 
                 depth_i = (depth_i * 1000).astype(np.uint16)
-                file_name = camera.name.replace(".jpg", ".png")
+                file_name = camera.name.split(".")[0] + ".png"
                 cv2.imwrite(os.path.join(output_dir, file_name), depth_i)
+
+    def export_all_triangles(self, output_dir: str, target_resolution: int = 0):
+        num_cameras = len(self.cameras)
+        start_idx = self.start_idx
+        batch_size = self.batch_size
+        end_idx = self.end_idx if self.end_idx != -1 else num_cameras
+
+        if target_resolution <= 0:
+            target_resolution = self.cameras[0].width
+
+        os.makedirs(output_dir, exist_ok=True)
+        self.load_mesh()
+        for i in range(start_idx, end_idx, batch_size):
+            batch_cameras = self.cameras[i : i + batch_size]
+            from time import time
+
+            start = time()
+            triangles = self.rasterize_triangles(batch_cameras, target_resolution)
+            end = time()
+            print(f"Time taken: {end - start} seconds")
+
+            for i in range(len(triangles)):
+                camera = batch_cameras[i]
+                triangles_i = triangles[i, :, :, 0]
+                file_name = camera.name.split(".")[0] + ".npy"
+                np.save(os.path.join(output_dir, file_name), triangles_i)
 
     def load_mesh(self):
         self.renderer.load_ply(self.mesh_path)
@@ -67,3 +93,11 @@ class ScanNetPPMeshDataset:
         fragments = self.renderer.rasterize(target_resolution)
         depth = fragments.zbuf.cpu().numpy()
         return depth
+
+    def rasterize_triangles(
+        self, cameras: List[SceneKitCamera], target_resolution: int = 640
+    ):
+        self.renderer.set_cameras(cameras)
+        fragments = self.renderer.rasterize(target_resolution)
+        pix_to_face = fragments.pix_to_face.cpu().numpy()
+        return pix_to_face

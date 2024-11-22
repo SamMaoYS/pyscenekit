@@ -221,6 +221,22 @@ class ScanNetPPiPhoneDataset:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         return image
 
+    def get_image_by_path(self, image_path: str):
+        image = cv2.imread(image_path)
+        if self.undistort:
+            image_name = os.path.basename(image_path)
+            camera_id = self._extrinsics.get(image_name, {}).get("camera_id", None)
+            if camera_id is not None:
+                image = cv2.remap(
+                    image,
+                    self._intrinsics[camera_id]["map1"],
+                    self._intrinsics[camera_id]["map2"],
+                    interpolation=cv2.INTER_LINEAR,
+                    borderMode=cv2.BORDER_REFLECT_101,
+                )
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        return image
+
     def get_mask_by_index(self, index: int):
         mask_path = self.get_mask_path_by_index(index)
         mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)

@@ -6,6 +6,8 @@ from natsort import natsorted
 from dataclasses import dataclass, field
 
 from pyscenekit.utils.common import read_json
+from pyscenekit.scenekit3d.common import SceneKitCamera
+from pyscenekit.scenekit3d.utils import qvec2rotmat
 
 
 @dataclass
@@ -58,8 +60,9 @@ class DistortionParams:
 
 # reference: https://github.com/scannetpp/scannetpp/blob/main/dslr/undistort.py
 class ScanNetPPDLSRDataset:
-    def __init__(self, data_dir: str, undistort=True):
+    def __init__(self, data_dir: str, output_dir: str = None, undistort=True):
         self.data_dir = data_dir
+        self.output_dir = output_dir if output_dir is not None else data_dir
         self.undistort = undistort
         self.image_paths = self.get_image_paths()
         self.mask_paths = self.get_mask_paths()
@@ -69,6 +72,9 @@ class ScanNetPPDLSRDataset:
             self.get_distortion_params() if self.undistort else None
         )
 
+        self._extrinsics = {}
+        self._read_cameras()
+
     @property
     def image_dir(self):
         return os.path.join(self.data_dir, "resized_images")
@@ -76,6 +82,10 @@ class ScanNetPPDLSRDataset:
     @property
     def mask_dir(self):
         return os.path.join(self.data_dir, "resized_anon_masks")
+
+    @property
+    def colmap_path(self):
+        return os.path.join(self.data_dir, "colmap")
 
     @property
     def transforms_path(self):
@@ -104,6 +114,9 @@ class ScanNetPPDLSRDataset:
 
     def get_image_by_index(self, index: int):
         image_path = self.get_image_path_by_index(index)
+        return self.get_image_by_path(image_path)
+
+    def get_image_by_path(self, image_path: str):
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if self.undistort:
@@ -168,3 +181,51 @@ class ScanNetPPDLSRDataset:
         for i in range(1, self.num_images):
             video_writer.write(self.get_image_by_index(i))
         video_writer.release()
+
+    def read_cameras(self):
+        # check if self._intrinsics and self._extrinsics are empty
+        if len(self._extrinsics) == 0:
+            self._read_cameras()
+
+        cameras = []
+        for image_name, extrinsics_data in self._extrinsics.items():
+            extrinsics = extrinsics_data["extrinsics"]
+            if self.undistort:
+                intrinsics = self.distortion_params.new_K
+            else:
+                intrinsics = self.distortion_params.K
+            camera = SceneKitCamera(
+                name=image_name,
+                intrinsics=intrinsics,
+                extrinsics=extrinsics,
+                width=self.distortion_params.width,
+                height=self.distortion_params.height,
+            )
+            cameras.append(camera)
+        return cameras
+
+    def _read_cameras(self):
+        extrinsics_file = os.path.join(self.colmap_path, "images.txt")
+        with open(extrinsics_file, "r") as fid:
+            while True:
+                line = fid.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if len(line) > 0 and line[0] != "#":
+                    elems = line.split()
+                    image_id = int(elems[0])
+                    qvec = np.array(tuple(map(float, elems[1:5])))
+                    tvec = np.array(tuple(map(float, elems[5:8])))
+                    camera_id = int(elems[8])
+                    image_name = elems[9]
+                    elems = fid.readline().split()
+                    extrinsics_matrix = np.eye(4)
+                    extrinsics_matrix[:3, :3] = qvec2rotmat(qvec)
+                    extrinsics_matrix[:3, 3] = tvec
+
+                    self._extrinsics[image_name] = {
+                        "image_id": image_id,
+                        "camera_id": camera_id,
+                        "extrinsics": extrinsics_matrix,
+                    }
